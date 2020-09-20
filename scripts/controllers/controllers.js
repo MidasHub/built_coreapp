@@ -873,7 +873,7 @@
             scope.first.templateUrl =  API_VERSION + '/glaccounts/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -958,7 +958,7 @@
             scope.first.templateUrl =  API_VERSION + '/journalentries/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -2471,7 +2471,7 @@
             scope.first.templateUrl =  API_VERSION + '/centers/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.centerTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -2748,7 +2748,7 @@
             scope.restrictDate = new Date();
             scope.first.date = new Date();
             scope.addedGroups = [];
-            resourceFactory.centerTemplateResource.get({staffInSelectedOfficeOnly:true},function (data) {
+            resourceFactory.centerTemplateResource.get({staffInSelectedOfficeOnly:false},function (data) {
                 scope.offices = data.officeOptions;
                 scope.staffs = data.staffOptions;
                 scope.groups = data.groupMembersOptions;
@@ -2765,7 +2765,7 @@
             }
 
             scope.changeOffice = function () {
-                resourceFactory.centerTemplateResource.get({staffInSelectedOfficeOnly:true, officeId: scope.formData.officeId
+                resourceFactory.centerTemplateResource.get({staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                 }, function (data) {
                     scope.staffs = data.staffOptions;
                 });
@@ -2838,7 +2838,7 @@
             scope.first.date = new Date();
             scope.centerId = routeParams.id;
             scope.restrictDate = new Date();
-            resourceFactory.centerResource.get({centerId: routeParams.id, template: 'true',staffInSelectedOfficeOnly:true}, function (data) {
+            resourceFactory.centerResource.get({centerId: routeParams.id, template: 'true',staffInSelectedOfficeOnly:false}, function (data) {
                 scope.edit = data;
                 scope.staffs = data.staffOptions;
                 scope.formData = {
@@ -3203,7 +3203,7 @@
         	scope.first.templateUrl =  API_VERSION + '/clients/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
         	+ '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
         	scope.formData = {};
-        	var requestParams = {staffInSelectedOfficeOnly:true};
+        	var requestParams = {staffInSelectedOfficeOnly:false};
         	
         	resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -3389,7 +3389,7 @@
                     scope.breadcrumbName = 'label.anchor.assignstaff';
                     scope.labelName = 'label.input.staff';
                     scope.staffField = true;
-                    resourceFactory.clientResource.get({clientId: routeParams.id, template: 'true',staffInSelectedOfficeOnly:true}, function (data) {
+                    resourceFactory.clientResource.get({clientId: routeParams.id, template: 'true',staffInSelectedOfficeOnly:false}, function (data) {
                         if (data.staffOptions) {
                             scope.staffOptions = data.staffOptions;
                             scope.formData.staffId = scope.staffOptions[0].id;
@@ -3981,7 +3981,7 @@
             scope.clientId = routeParams.clientId;
 
 
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
             if (routeParams.groupId) {
                 requestParams.groupId = routeParams.groupId;
             }
@@ -4137,7 +4137,7 @@
             };
 
             scope.changeOffice = function (officeId) {
-                resourceFactory.clientTemplateResource.get({staffInSelectedOfficeOnly:true, officeId: officeId
+                resourceFactory.clientTemplateResource.get({staffInSelectedOfficeOnly:false, officeId: officeId
                 }, function (data) {
                     scope.staffs = data.staffOptions;
                     scope.savingproducts = data.savingProductOptions;
@@ -4409,7 +4409,7 @@
             scope.opensavingsproduct = 'false';
             scope.showNonPersonOptions = false;
             scope.clientPersonId = 1;
-            resourceFactory.clientResource.get({clientId: routeParams.id, template:'true', staffInSelectedOfficeOnly:true}, function (data) {
+            resourceFactory.clientResource.get({clientId: routeParams.id, template:'true', staffInSelectedOfficeOnly:false}, function (data) {
                 scope.offices = data.officeOptions;
                 scope.staffs = data.staffOptions;
                 scope.savingproducts = data.savingProductOptions;
@@ -7470,7 +7470,7 @@
             scope.first.templateUrl =  API_VERSION + '/fixeddepositaccounts/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -9242,7 +9242,7 @@
             scope.first.templateUrl =  API_VERSION + '/recurringdepositaccounts/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -9326,7 +9326,7 @@
             scope.first.templateUrl =  API_VERSION + '/recurringdepositaccounts/transactions/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -11043,7 +11043,7 @@
             scope.group = [];
             scope.staff = [];
             scope.formData = {};
-            resourceFactory.assignStaffResource.get({groupOrCenter: routeParams.entityType, groupOrCenterId: routeParams.id, template: 'true',staffInSelectedOfficeOnly:true}, function (data) {
+            resourceFactory.assignStaffResource.get({groupOrCenter: routeParams.entityType, groupOrCenterId: routeParams.id, template: 'true',staffInSelectedOfficeOnly:false}, function (data) {
                 scope.group = data;
                 scope.staffs = data.staffOptions;
                 scope.formData.staffId = data.staffOptions[0].id;
@@ -11154,7 +11154,7 @@
             scope.first.templateUrl =  API_VERSION + '/groups/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -11385,7 +11385,7 @@
             scope.changeOffice = function (officeId) {
                 scope.addedClients = [];
                 scope.clientData.available = [];
-                resourceFactory.groupTemplateResource.get({staffInSelectedOfficeOnly: false, officeId: officeId,staffInSelectedOfficeOnly:true
+                resourceFactory.groupTemplateResource.get({staffInSelectedOfficeOnly: false, officeId: officeId,staffInSelectedOfficeOnly:false
                 }, function (data) {
                     scope.staffs = data.staffOptions;
                 });
@@ -11583,7 +11583,7 @@
 
             scope.RequestEntities('m_group','ACTIVATE');
 
-            resourceFactory.groupResource.get({groupId: routeParams.id, associations: 'clientMembers', template: 'true',staffInSelectedOfficeOnly:true}, function (data) {
+            resourceFactory.groupResource.get({groupId: routeParams.id, associations: 'clientMembers', template: 'true',staffInSelectedOfficeOnly:false}, function (data) {
                 scope.editGroup = data;
                 scope.formData = {
                     name: data.name,
@@ -12823,7 +12823,7 @@
             scope.formData.assignmentDate = new Date();
             scope.restrictDate = new Date();
 
-            resourceFactory.loanResource.get({loanId: scope.loanId, template: true, fields: fields, staffInSelectedOfficeOnly:true}, function (data) {
+            resourceFactory.loanResource.get({loanId: scope.loanId, template: true, fields: fields, staffInSelectedOfficeOnly:false}, function (data) {
                 if (data.loanOfficerOptions) {
                     scope.loanOfficers = data.loanOfficerOptions;
                     scope.formData.toLoanOfficerId = data.loanOfficerOptions[0].id;
@@ -12916,7 +12916,7 @@
             scope.first.templateUrl =  API_VERSION + '/loans/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -13000,7 +13000,7 @@
             scope.first.templateUrl =  API_VERSION + '/loans/repayments/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -13119,7 +13119,7 @@
             scope.date = {};
             scope.rateFlag = false;
 
-            resourceFactory.loanResource.get({loanId: routeParams.id, template: true, associations: 'charges,collateral,meeting,multiDisburseDetails',staffInSelectedOfficeOnly:true}, function (data) {
+            resourceFactory.loanResource.get({loanId: routeParams.id, template: true, associations: 'charges,collateral,meeting,multiDisburseDetails',staffInSelectedOfficeOnly:false}, function (data) {
                 scope.loanaccountinfo = data;
 
                 resourceFactory.loanResource.get({resourceType: 'template', templateType: 'collateral', productId: data.loanProductId, fields: 'id,loanCollateralOptions'}, function (data) {
@@ -13174,7 +13174,7 @@
                     inparams.groupId = scope.groupId;
                 }
 
-                inparams.staffInSelectedOfficeOnly = true;
+                inparams.staffInSelectedOfficeOnly = false;
 
                 resourceFactory.loanResource.get(inparams, function (data) {
                     scope.loanaccountinfo = data;
@@ -14585,7 +14585,7 @@
             scope.group = {};
             scope.group.selectedclients = [];
             scope.group.id = routeParams.groupId;
-            scope.staffInSelectedOfficeOnly = true;
+            scope.staffInSelectedOfficeOnly = false;
             scope.requestIdentifier = "clientId";
             scope.inparams = { resourceType: 'template', templateType: 'jlgbulk', lendingStrategy: 300 };
             scope.selectedProduct = {};
@@ -14908,7 +14908,7 @@
                 scope.inparams.templateType = 'individual';
             }
 
-            scope.inparams.staffInSelectedOfficeOnly = true;
+            scope.inparams.staffInSelectedOfficeOnly = false;
 
             resourceFactory.loanResource.get(scope.inparams, function (data) {
                 scope.products = data.productOptions;
@@ -21493,7 +21493,7 @@
             });
 
             scope.changeStaff = function (staffId) {
-                resourceFactory.employeeResource.get({staffInSelectedOfficeOnly:true, associations:'all', staffId: staffId}, function (data) {
+                resourceFactory.employeeResource.get({staffInSelectedOfficeOnly:false, associations:'all', staffId: staffId}, function (data) {
                     scope.linkedvillages = data.linkedVillages;
                 });
             };
@@ -21790,7 +21790,7 @@
             });
 
             scope.changeStaff = function (staffId) {
-                resourceFactory.employeeResource.get({staffInSelectedOfficeOnly:true, associations:'all', staffId: staffId}, function (data) {
+                resourceFactory.employeeResource.get({staffInSelectedOfficeOnly:false, associations:'all', staffId: staffId}, function (data) {
                     scope.linkedvillages = data.linkedVillages;
                 });
             };
@@ -28984,7 +28984,7 @@
             scope.first.templateUrl =  API_VERSION + '/savingsaccounts/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -29070,7 +29070,7 @@
             scope.first.templateUrl =  API_VERSION + '/savingsaccounts/transactions/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -29160,7 +29160,7 @@
             }
 
 
-            scope.inparams.staffInSelectedOfficeOnly = true;
+            scope.inparams.staffInSelectedOfficeOnly = false;
             
             resourceFactory.savingsTemplateResource.get(scope.inparams, function (data) {
                 scope.products = data.productOptions;
@@ -30787,7 +30787,7 @@
             scope.first.templateUrl =  API_VERSION + '/accounts/share/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
@@ -34169,7 +34169,7 @@
             scope.first.templateUrl =  API_VERSION + '/users/downloadtemplate' + '?tenantIdentifier=' + $rootScope.tenantIdentifier
                 + '&locale=' + scope.optlang.code + '&dateFormat=' + scope.df;
             scope.formData = {};
-            var requestParams = {staffInSelectedOfficeOnly:true};
+            var requestParams = {staffInSelectedOfficeOnly:false};
 
             resourceFactory.clientTemplateResource.get(requestParams, function (data) {
                 scope.offices = data.officeOptions;
