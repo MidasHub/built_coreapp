@@ -1064,7 +1064,7 @@
                 console.log("other than Hanoi server", domains[0]);
             }
             //host = "https://" + mainLink.hostname + (mainLink.port ? ':' + mainLink.port : '');
-            host = "https://app2.midascore.net:8443"
+            host = "https://app2.midascore.net:8443";
             console.log('hostname from mainLink = ', host);
         }
         //accessing from a file system or other servers
