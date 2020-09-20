@@ -1054,7 +1054,7 @@
             domains = hostname.split('.');
             console.log('domains---' + domains);
             // For multi tenant hosting
-            if (domains[0] == "app2") {
+            if (domains[0] == "hanoi") {
                 $httpProvider.defaults.headers.common['Fineract-Platform-TenantId'] = 'hanoi';
                 ResourceFactoryProvider.setTenantIdenetifier('hanoi');
                 console.log("Hanoi server", domains[0]);
@@ -1063,7 +1063,8 @@
                 ResourceFactoryProvider.setTenantIdenetifier(domains[0]);
                 console.log("other than Hanoi server", domains[0]);
             }
-            host = "https://" + mainLink.hostname + (mainLink.port ? ':' + mainLink.port : '');
+            //host = "https://" + mainLink.hostname + (mainLink.port ? ':' + mainLink.port : '');
+            host = "https://app2.midascore.net:8443"
             console.log('hostname from mainLink = ', host);
         }
         //accessing from a file system or other servers
