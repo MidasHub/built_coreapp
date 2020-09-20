@@ -17009,6 +17009,7 @@
                 scope.islogofoldernamefetched = true;
                 $http.get('scripts/config/LogoConfig.json').then(function onSuccess(response) {
                     var datas = response.data;
+                    console.log('LogoConfig: ...',datas )
                     for(var i in datas){
                         var data = datas[i];
                         if(data.tenantIdentifier != undefined && data.tenantIdentifier == $rootScope.tenantIdentifier){
