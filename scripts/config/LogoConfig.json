@@ -1,10 +1,10 @@
 {
     "Config1":{
-        "tenantIdentifier":"some-tenant which is not default",
-        "logofoldername":"Myfolder/",
-        "faviconpath":"Image path for favicon",
-        "bigLogopath":"Image path for big Logo at login screen",
-        "headerLogoPath":"Image path for Header logo at navbar",
-        "LargeLogoPath":"Image path for Large Logo at home screen"
+        "tenantIdentifier":"hanoi",
+        "logofoldername":"images/",
+        "faviconpath":"favicon.ico",
+        "bigLogopath":"mifos-logo-flat.png",
+        "headerLogoPath":"mifos-logo-flat.png",
+        "LargeLogoPath":"mifos_lg-logo.jpg"
     }
 }
