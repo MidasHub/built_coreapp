@@ -1058,6 +1058,11 @@
                 $httpProvider.defaults.headers.common['Fineract-Platform-TenantId'] = 'hanoi';
                 ResourceFactoryProvider.setTenantIdenetifier('hanoi');
                 console.log("Hanoi server", domains[0]);
+            } 
+            if (domains[0] == "chill") {
+                $httpProvider.defaults.headers.common['Fineract-Platform-TenantId'] = 'default';
+                ResourceFactoryProvider.setTenantIdenetifier('default');
+                console.log("Hanoi server", domains[0]);
             } else {
                 $httpProvider.defaults.headers.common['Fineract-Platform-TenantId'] = domains[0];
                 ResourceFactoryProvider.setTenantIdenetifier(domains[0]);
