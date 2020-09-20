@@ -17,7 +17,7 @@
 
             this.init  = function(scope) {
                 var deferred = $q.defer();
-                $http.get('scripts/config/UIconfig.json').then(function onSuccess(response) {
+                $http.get('../scripts/config/UIconfig.json').then(function onSuccess(response) {
                     var data = response.data;
                     scope.$emit("configJsonObj",data);
                     deferred.resolve(data);
