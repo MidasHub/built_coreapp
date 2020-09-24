@@ -13191,7 +13191,7 @@
                     inparams.groupId = scope.groupId;
                 }
 
-                inparams.staffInSelectedOfficeOnly = true;
+                inparams.staffInSelectedOfficeOnly = false;
 
                 resourceFactory.loanResource.get(inparams, function (data) {
                     scope.loanaccountinfo = data;
@@ -15402,7 +15402,7 @@
             scope.groupId = routeParams.groupId;
             scope.group.selectedclients = [];
             scope.group.id = routeParams.groupId;
-            scope.staffInSelectedOfficeOnly = true;
+            scope.staffInSelectedOfficeOnly = false;
             scope.requestIdentifier = "clientId";
             scope.inparams = { resourceType: 'template', templateType: 'jlgbulk', lendingStrategy: 300 };
             scope.selectedProduct = {};
@@ -15783,7 +15783,7 @@
             scope.group = {};
             scope.group.selectedclients = [];
             scope.group.id = routeParams.groupId;
-            scope.staffInSelectedOfficeOnly = true;
+            scope.staffInSelectedOfficeOnly = false;
             scope.requestIdentifier = "clientId";
             scope.inparams = { resourceType: 'template', templateType: 'jlgbulk', lendingStrategy: 300 };
             scope.selectedProduct = {};
@@ -16106,7 +16106,7 @@
                 scope.inparams.templateType = 'individual';
             }
 
-            scope.inparams.staffInSelectedOfficeOnly = true;
+            scope.inparams.staffInSelectedOfficeOnly = false;
 
             resourceFactory.loanResource.get(scope.inparams, function (data) {
                 scope.products = data.productOptions;
@@ -30775,7 +30775,7 @@
             }
             ;
 
-            scope.inparams.staffInSelectedOfficeOnly = true;
+            scope.inparams.staffInSelectedOfficeOnly = false;
 
             resourceFactory.groupClients.get({groupId:scope.groupId,associations:'activeClientMembers'}, function (data) {
 
@@ -31105,7 +31105,7 @@
             }
 
 
-            scope.inparams.staffInSelectedOfficeOnly = true;
+            scope.inparams.staffInSelectedOfficeOnly = false;
             
             resourceFactory.savingsTemplateResource.get(scope.inparams, function (data) {
                 scope.products = data.productOptions;
