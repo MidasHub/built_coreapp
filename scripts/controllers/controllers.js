@@ -885,14 +885,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -2483,14 +2483,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.centerTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.centerTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -3215,14 +3215,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.centerTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.centerTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -7482,14 +7482,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -9254,14 +9254,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -11166,14 +11166,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -11291,7 +11291,7 @@
             scope.tf = "HH:mm";
             scope.clientData = {};
 
-            var requestParams = {orderBy: 'name', sortOrder: 'ASC', staffInSelectedOfficeOnly: true};
+            var requestParams = {orderBy: 'name', sortOrder: 'ASC', staffInSelectedOfficeOnly:false};
             if (routeParams.centerId) {
                 requestParams.centerId = routeParams.centerId;
             }
@@ -12945,14 +12945,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -30609,14 +30609,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
@@ -36893,14 +36893,14 @@
                 if(scope.formData.officeId) {
                     if(scope.first.queryParams.indexOf("officeId")==-1) {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
                         scope.first.queryParams += '&officeId=' + scope.formData.officeId;
                     }else {
                         resourceFactory.clientTemplateResource.get({
-                            staffInSelectedOfficeOnly: true, officeId: scope.formData.officeId
+                            staffInSelectedOfficeOnly:false, officeId: scope.formData.officeId
                         }, function (data) {
                             scope.staffs = data.staffOptions;
                         });
