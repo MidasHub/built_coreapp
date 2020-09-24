@@ -12143,6 +12143,9 @@
         ViewGroupController: function (scope, routeParams, route, location, resourceFactory, dateFilter, $uibModal) {
             scope.group = [];
             scope.template = [];
+            scope.groupGLIMAccounts=[];
+            scope.groupGSIMAccounts=[];
+            scope.groupId=routeParams.id;
             scope.formData = {};
             scope.choice = 0;
             scope.staffData = {};
@@ -12155,6 +12158,13 @@
             };
             scope.routeToSaving = function (id) {
                 location.path('/viewsavingaccount/' + id);
+            };
+            scope.routeToGLIMLoan = function (glimAccountNumber, glimId) {
+                location.path('/viewglimaccount/' +scope.groupId +'/'+glimAccountNumber +'/'+glimId);
+            };
+
+            scope.routeToGSIMAccount = function (gsimAccountNumber) {
+                location.path('/viewgsimaccount/' + scope.groupId+'/'+gsimAccountNumber);
             };
             scope.routeToMem = function (id) {
                 location.path('/viewclient/' + id);
@@ -12184,6 +12194,13 @@
             });
             resourceFactory.groupNotesResource.getAllNotes({groupId: routeParams.id}, function (data) {
                 scope.groupNotes = data;
+            });
+            resourceFactory.groupGLIMAccountResource.get({groupId: routeParams.id}, function (data) {
+                scope.groupGLIMAccounts = data;
+            });
+
+            resourceFactory.groupGSIMAccountResource.get({groupId: routeParams.id}, function (data) {
+                scope.groupGSIMAccounts = data;
             });
             scope.delrole = function (id) {
                 resourceFactory.groupResource.save({groupId: routeParams.id, command: 'unassignRole', roleId: id}, {}, function (data) {
@@ -13174,7 +13191,7 @@
                     inparams.groupId = scope.groupId;
                 }
 
-                inparams.staffInSelectedOfficeOnly = false;
+                inparams.staffInSelectedOfficeOnly = true;
 
                 resourceFactory.loanResource.get(inparams, function (data) {
                     scope.loanaccountinfo = data;
@@ -13563,6 +13580,804 @@
     });
     mifosX.ng.application.controller('EditLoanCollateralController', ['$scope', 'ResourceFactory', '$routeParams', '$location', mifosX.controllers.EditLoanCollateralController]).run(function ($log) {
         $log.info("EditLoanCollateralController initialized");
+    });
+}(mifosX.controllers || {}));
+;(function (module) {
+    mifosX.controllers = _.extend(module, {
+        GLIMLoanAccountActionsController: function (scope, resourceFactory, location, routeParams, dateFilter) {
+
+            scope.action = routeParams.action || "";
+            scope.accountId = routeParams.id; //childloanId
+            scope.glimId=routeParams.glimId;
+            scope.groupId=routeParams.groupId;
+
+            scope.formData = {};
+            scope.showDateField = true;
+            scope.showNoteField = true;
+            scope.showAmountField = false;
+            scope.restrictDate = new Date();
+            // Transaction UI Related
+            scope.isTransaction = false;
+            scope.showPaymentDetails = false;
+            scope.paymentTypes = [];
+            scope.expectedDisbursementDate = [];
+            scope.disbursementDetails = [];
+            scope.showTrancheAmountTotal = 0;
+            scope.processDate = false;
+
+            var prevLoanAmount;
+
+
+
+            switch (scope.action) {
+                case "approve":
+                    scope.taskPermissionName = 'APPROVE_LOAN';
+                    resourceFactory.loanTemplateResource.get({loanId: scope.accountId, templateType: 'approval'}, function (data) {
+
+                        scope.title = 'label.heading.approveloanaccount';
+                        scope.labelName = 'label.input.approvedondate';
+                        scope.modelName = 'approvedOnDate';
+                        scope.formData[scope.modelName] =  new Date();
+                        scope.showApprovalAmount = true;
+                        scope.formData.approvedLoanAmount =  data.approvalAmount;
+                    });
+
+                    resourceFactory.LoanAccountResource.getLoanAccountDetails({loanId: routeParams.id, associations: 'multiDisburseDetails'}, function (data) {
+                        scope.expectedDisbursementDate = new Date(data.timeline.expectedDisbursementDate);
+                        if(data.disbursementDetails != ""){
+                            scope.disbursementDetails = data.disbursementDetails;
+                            scope.approveTranches = true;
+                        }
+                        for(var i in data.disbursementDetails){
+                            scope.disbursementDetails[i].expectedDisbursementDate = new Date(data.disbursementDetails[i].expectedDisbursementDate);
+                            scope.disbursementDetails[i].principal = data.disbursementDetails[i].principal;
+                            scope.showTrancheAmountTotal += Number(data.disbursementDetails[i].principal) ;
+                        }
+                    });
+                    break;
+                case "glimApprove":
+                    scope.taskPermissionName = 'APPROVE_LOAN';
+                    scope.showApprovalTable=true;
+                    scope.approvalArray=[];
+                    scope.glimAccounts=[];
+                    scope.totalLoanAmount=0;
+                    scope.approvalFormData=[];
+
+                    resourceFactory.loanTemplateResource.get({loanId: scope.accountId, templateType: 'approval'}, function (data) {
+
+                        scope.title = 'label.heading.approveloanaccount';
+                        scope.labelName = 'label.input.approvedondate';
+                        scope.modelName = 'approvedOnDate';
+                        scope.formData[scope.modelName] =  new Date();
+                        scope.showApprovalAmount = false;
+                        scope.formData.approvedLoanAmount =  data.approvalAmount;
+                    });
+                    // start of glim
+
+                    resourceFactory.glimLoanTemplate.get({glimId: scope.glimId}, function (data) {
+                        scope.glimAccounts = data;
+
+                        if(scope.approvalArray.length!=0)
+                        {
+                            scope.approvalArray=[];
+
+                        }
+                        for(i=0;i<scope.glimAccounts.length;i++)
+                        {
+
+                            var temp={};
+                            temp.parentAccountNo=data[i].parentAccountNo;
+                            temp.clientName=data[i].clientName;
+                            temp.childLoanId=data[i].childLoanId;
+                            temp.childLoanAccountNo=data[i].childLoanAccountNo;
+                            temp.approvedLoanAmount=parseFloat(data[i].childPrincipalAmount);
+
+                            scope.totalLoanAmount+=parseFloat(data[i].childPrincipalAmount);
+
+
+                            scope.approvalArray.push(temp);
+                        }
+
+                    });
+                    // end of glim
+
+                    resourceFactory.LoanAccountResource.getLoanAccountDetails({loanId: routeParams.id, associations: 'multiDisburseDetails'}, function (data) {
+                        scope.expectedDisbursementDate = new Date(data.timeline.expectedDisbursementDate);
+                        if(data.disbursementDetails != ""){
+                            scope.disbursementDetails = data.disbursementDetails;
+                            scope.approveTranches = true;
+                        }
+                        for(var i in data.disbursementDetails){
+                            scope.disbursementDetails[i].expectedDisbursementDate = new Date(data.disbursementDetails[i].expectedDisbursementDate);
+                            scope.disbursementDetails[i].principal = data.disbursementDetails[i].principal;
+                            scope.showTrancheAmountTotal += Number(data.disbursementDetails[i].principal) ;
+                        }
+                    });
+                    break;
+                case "reject":
+                    scope.title = 'label.heading.rejectloanaccount';
+                    scope.labelName = 'label.input.rejectedondate';
+                    scope.modelName = 'rejectedOnDate';
+                    scope.formData[scope.modelName] = new Date();
+                    scope.taskPermissionName = 'REJECT_LOAN';
+                    break;
+                case "withdrawnByApplicant":
+                    scope.title = 'label.heading.withdrawloanaccount';
+                    scope.labelName = 'label.input.withdrawnondate';
+                    scope.modelName = 'withdrawnOnDate';
+                    scope.formData[scope.modelName] = new Date();
+                    scope.taskPermissionName = 'WITHDRAW_LOAN';
+                    break;
+                case "undoapproval":
+                    scope.title = 'label.heading.undoapproveloanaccount';
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'APPROVALUNDO_LOAN';
+                    break;
+                case "undodisbursal":
+                    scope.title = 'label.heading.undodisburseloanaccount';
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'DISBURSALUNDO_LOAN';
+                    break;
+                case "disburse":
+                    scope.modelName = 'actualDisbursementDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'disburse'}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                        if (data.paymentTypeOptions.length > 0) {
+                            scope.formData.paymentTypeId = data.paymentTypeOptions[0].id;
+                        }
+                        scope.formData.transactionAmount = data.amount;
+                        scope.formData[scope.modelName] = new Date();
+                        if (data.fixedEmiAmount) {
+                            scope.formData.fixedEmiAmount = data.fixedEmiAmount;
+                            scope.showEMIAmountField = true;
+                        }
+                    });
+                    scope.title = 'label.heading.disburseloanaccount';
+                    scope.labelName = 'label.input.disbursedondate';
+                    scope.isTransaction = true;
+                    scope.showAmountField = true;
+                    scope.taskPermissionName = 'DISBURSE_LOAN';
+                    break;
+                case "glimDisburse":
+                    scope.modelName = 'actualDisbursementDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'disburse'}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                        if (data.paymentTypeOptions.length > 0) {
+                            scope.formData.paymentTypeId = data.paymentTypeOptions[0].id;
+                        }
+                        // scope.formData.transactionAmount = data.amount;
+                        scope.formData[scope.modelName] = new Date();
+                        if (data.fixedEmiAmount) {
+                            scope.formData.fixedEmiAmount = data.fixedEmiAmount;
+                            scope.showEMIAmountField = true;
+                        }
+                    });
+
+                    // start of glim
+                    scope.approvalArray=[];
+                    scope.glimAccounts=[];
+                    scope.totalLoanAmount=0;
+                    scope.showDisbursalTable=true;
+                    resourceFactory.glimLoanTemplate.get({glimId: scope.glimId}, function (data) {
+                        scope.glimAccounts = data;
+
+                        if(scope.approvalArray.length!=0)
+                        {
+                            scope.approvalArray=[];
+                        }
+                        for(i=0;i<scope.glimAccounts.length;i++)
+                        {
+                            var temp={};
+                            temp.parentAccountNo=data[i].parentAccountNo;
+                            temp.clientName=data[i].clientName;
+                            temp.childLoanId=data[i].childLoanId;
+                            temp.childLoanAccountNo=data[i].childLoanAccountNo;
+                            temp.approvedLoanAmount=parseFloat(data[i].childPrincipalAmount);
+
+                            scope.totalLoanAmount+=parseFloat(data[i].childPrincipalAmount);
+                            scope.approvalArray.push(temp);
+
+                        }
+                    });
+                    // end of glim
+
+                    scope.title = 'label.heading.disburseloanaccount';
+                    scope.labelName = 'label.input.disbursedondate';
+                    scope.isTransaction = false;
+                    scope.showAmountField = false;
+                    scope.taskPermissionName = 'DISBURSE_LOAN';
+                    break;
+                case "disbursetosavings":
+                    scope.modelName = 'actualDisbursementDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'disburseToSavings'}, function (data) {
+                        scope.formData.transactionAmount = data.amount;
+                        scope.formData[scope.modelName] = new Date();
+                        if (data.fixedEmiAmount) {
+                            scope.formData.fixedEmiAmount = data.fixedEmiAmount;
+                            scope.showEMIAmountField = true;
+                        }
+                    });
+                    scope.title = 'label.heading.disburseloanaccount';
+                    scope.labelName = 'label.input.disbursedondate';
+                    scope.isTransaction = false;
+                    scope.showAmountField = true;
+                    scope.taskPermissionName = 'DISBURSETOSAVINGS_LOAN';
+                    break;
+                case "repayment":
+                    scope.modelName = 'transactionDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'repayment'}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                        if (data.paymentTypeOptions.length > 0) {
+                            scope.formData.paymentTypeId = data.paymentTypeOptions[0].id;
+                        }
+                        scope.formData.transactionAmount = data.amount;
+                        scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                        if(data.penaltyChargesPortion>0){
+                            scope.showPenaltyPortionDisplay = true;
+                        }
+                    });
+                    scope.title = 'label.heading.loanrepayments';
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.isTransaction = true;
+                    scope.showAmountField = true;
+                    scope.taskPermissionName = 'REPAYMENT_LOAN';
+                    break;
+                case "glimrepayment":
+                    scope.formData.formDataArray=[];
+                    scope.glimAccounts=[];
+                    scope.repaymentArray=[];
+                    scope.glimRepaymentAccounts=[];
+                    scope.modelName = 'transactionDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'repayment'}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                        if (data.paymentTypeOptions.length > 0) {
+                            scope.formData.paymentTypeId = data.paymentTypeOptions[0].id;
+                        }
+                        // scope.formData.transactionAmount = data.amount;
+                        scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                        if(data.penaltyChargesPortion>0){
+                            scope.showPenaltyPortionDisplay = true;
+                        }
+                    });
+
+                    //scope.repaymentArray=new Array();
+                    resourceFactory.glimLoanTemplate.get({glimId: scope.glimId}, function (data) {
+                        scope.glimRepaymentAccounts = data;
+
+                        if(scope.repaymentArray.length!=0)
+                        {
+                            scope.repaymentArray=[];
+                        }
+                        for(i=0;i<scope.glimRepaymentAccounts.length;i++)
+                        {
+                            var temp={};
+                            temp.parentAccountNo=data[i].parentAccountNo;
+                            temp.clientName=data[i].clientName;
+                            temp.childLoanId=data[i].childLoanId;
+                            temp.childLoanAccountNo=data[i].childLoanAccountNo;
+
+                            resourceFactory.loanTrxnsTemplateResource.get({loanId: data[i].childLoanId, command: 'repayment'}, function (data1) {
+                                if(data1.amount)
+                                {
+                                    temp.transactionAmount=data1.amount;
+                                }
+                                else {
+                                    temp.transactionAmount=0;
+                                }
+                                //console.log(temp.transactionAmount);
+                            });
+
+                            scope.repaymentArray.push(temp);
+
+                        }
+                    });
+
+                    scope.title = 'label.heading.loanrepayments';
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.isTransaction = true;
+                    scope.showAmountField = false;
+                    scope.taskPermissionName = 'REPAYMENT_LOAN';
+                    scope.showRepaymentTable=true;
+                    break;
+                case "prepayloan":
+                    scope.modelName = 'transactionDate';
+                    scope.formData.transactionDate =  new Date();
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'prepayLoan'}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                        if (data.paymentTypeOptions.length > 0) {
+                            scope.formData.paymentTypeId = data.paymentTypeOptions[0].id;
+                        }
+                        scope.formData.transactionAmount = data.amount;
+                        if(data.penaltyChargesPortion>0){
+                            scope.showPenaltyPortionDisplay = true;
+                        }
+                        scope.principalPortion = data.principalPortion;
+                        scope.interestPortion = data.interestPortion;
+                        scope.processDate = true;
+                    });
+                    scope.title = 'label.heading.prepayloan';
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.isTransaction = true;
+                    scope.showAmountField = true;
+                    scope.taskPermissionName = 'REPAYMENT_LOAN';
+                    scope.action = 'repayment';
+                    break;
+                case "waiveinterest":
+                    scope.modelName = 'transactionDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'waiveinterest'}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                        scope.formData.transactionAmount = data.amount;
+                        scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                    });
+                    scope.title = 'label.heading.loanwaiveinterest';
+                    scope.labelName = 'label.input.interestwaivedon';
+                    scope.showAmountField = true;
+                    scope.taskPermissionName = 'WAIVEINTERESTPORTION_LOAN';
+                    break;
+                case "writeoff":
+                    scope.modelName = 'transactionDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'writeoff'}, function (data) {
+                        scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                        scope.writeOffAmount = data.amount;
+                        scope.isLoanWriteOff = true;
+                    });
+                    scope.title = 'label.heading.writeoffloanaccount';
+                    scope.labelName = 'label.input.writeoffondate';
+                    scope.taskPermissionName = 'WRITEOFF_LOAN';
+                    break;
+                case "close-rescheduled":
+                    scope.modelName = 'transactionDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'close-rescheduled'}, function (data) {
+                        scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                    });
+                    scope.title = 'label.heading.closeloanaccountasrescheduled';
+                    scope.labelName = 'label.input.closedondate';
+                    scope.taskPermissionName = 'CLOSEASRESCHEDULED_LOAN';
+                    break;
+                case "close":
+                    scope.modelName = 'transactionDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'close'}, function (data) {
+                        scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                    });
+                    scope.title = 'label.heading.closeloanaccount';
+                    scope.labelName = 'label.input.closedondate';
+                    scope.taskPermissionName = 'CLOSE_LOAN';
+                    break;
+                case "unassignloanofficer":
+                    scope.title = 'label.heading.unassignloanofficer';
+                    scope.labelName = 'label.input.loanofficerunassigneddate';
+                    scope.modelName = 'unassignedDate';
+                    scope.showNoteField = false;
+                    scope.formData[scope.modelName] = new Date();
+                    scope.taskPermissionName = 'REMOVELOANOFFICER_LOAN';
+                    break;
+                case "modifytransaction":
+                    resourceFactory.loanTrxnsResource.get({loanId: scope.accountId, transactionId: routeParams.transactionId, template: 'true'},
+                        function (data) {
+                            scope.title = 'label.heading.editloanaccounttransaction';
+                            scope.labelName = 'label.input.transactiondate';
+                            scope.modelName = 'transactionDate';
+                            scope.paymentTypes = data.paymentTypeOptions || [];
+                            scope.formData.transactionAmount = data.amount;
+                            scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                            if (data.paymentDetailData) {
+                                if (data.paymentDetailData.paymentType) {
+                                    scope.formData.paymentTypeId = data.paymentDetailData.paymentType.id;
+                                }
+                                scope.formData.accountNumber = data.paymentDetailData.accountNumber;
+                                scope.formData.checkNumber = data.paymentDetailData.checkNumber;
+                                scope.formData.routingCode = data.paymentDetailData.routingCode;
+                                scope.formData.receiptNumber = data.paymentDetailData.receiptNumber;
+                                scope.formData.bankNumber = data.paymentDetailData.bankNumber;
+                            }
+                        });
+                    scope.showDateField = true;
+                    scope.showNoteField = false;
+                    scope.showAmountField = true;
+                    scope.isTransaction = true;
+                    scope.showPaymentDetails = false;
+                    scope.taskPermissionName = 'ADJUST_LOAN';
+                    break;
+                case "deleteloancharge":
+                    scope.showDelete = true;
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'DELETE_LOANCHARGE';
+                    break;
+                case "recoverguarantee":
+                    scope.showDelete = true;
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'RECOVERGUARANTEES_LOAN';
+                    break;
+                case "waivecharge":
+                    resourceFactory.LoanAccountResource.get({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId}, function (data) {
+                        if (data.chargeTimeType.value !== "Specified due date" && data.installmentChargeData) {
+                            scope.installmentCharges = data.installmentChargeData;
+                            scope.formData.installmentNumber = data.installmentChargeData[0].installmentNumber;
+                            scope.installmentchargeField = true;
+                        } else {
+                            scope.installmentchargeField = false;
+                            scope.showwaiveforspecicficduedate = true;
+                        }
+                    });
+
+                    scope.title = 'label.heading.waiveloancharge';
+                    scope.labelName = 'label.input.installment';
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'WAIVE_LOANCHARGE';
+                    break;
+                case "paycharge":
+                    resourceFactory.LoanAccountResource.get({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId, command: 'pay'}, function (data) {
+                        if (data.dueDate) {
+                            scope.formData.transactionDate = new Date(data.dueDate);
+                        }
+                        if (data.chargeTimeType.value === "Instalment Fee" && data.installmentChargeData) {
+                            scope.installmentCharges = data.installmentChargeData;
+                            scope.formData.installmentNumber = data.installmentChargeData[0].installmentNumber;
+                            scope.installmentchargeField = true;
+                        }
+                    });
+                    scope.title = 'label.heading.payloancharge';
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.paymentDatefield = true;
+                    scope.taskPermissionName = 'PAY_LOANCHARGE';
+                    break;
+                case "editcharge":
+                    resourceFactory.LoanAccountResource.get({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId}, function (data) {
+                        if (data.amountOrPercentage) {
+                            scope.showEditChargeAmount = true;
+                            scope.formData.amount = data.amountOrPercentage;
+                            if (data.dueDate) {
+                                scope.formData.dueDate = new Date(data.dueDate);
+                                scope.showEditChargeDueDate = true;
+                            }
+                        }
+
+                    });
+                    scope.title = 'label.heading.editcharge';
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'UPDATE_LOANCHARGE';
+                    break;
+                case "editdisbursedate":
+                    resourceFactory.LoanAccountResource.getLoanAccountDetails({loanId: routeParams.id, associations: 'multiDisburseDetails'}, function (data) {
+                        scope.showEditDisburseDate = true;
+                        scope.formData.approvedLoanAmount = data.approvedPrincipal;
+                        scope.expectedDisbursementDate = new Date(data.timeline.expectedDisbursementDate);
+                        for(var i in data.disbursementDetails){
+                            if(routeParams.disbursementId == data.disbursementDetails[i].id){
+                                scope.formData.updatedExpectedDisbursementDate = new Date(data.disbursementDetails[i].expectedDisbursementDate);
+                                scope.formData.updatedPrincipal = data.disbursementDetails[i].principal;
+                                scope.id = data.disbursementDetails[i].id;
+                            }
+                        }
+                    });
+
+                    scope.title = 'label.heading.editdisbursedate';
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'UPDATE_DISBURSEMENTDETAIL';
+                    break;
+                case "recoverypayment":
+                    scope.modelName = 'transactionDate';
+                    resourceFactory.loanTrxnsTemplateResource.get({loanId: scope.accountId, command: 'recoverypayment'}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                        if (data.paymentTypeOptions.length > 0) {
+                            scope.formData.paymentTypeId = data.paymentTypeOptions[0].id;
+                        }
+                        scope.formData.transactionAmount = data.amount;
+                        scope.formData[scope.modelName] = new Date();
+                    });
+                    scope.title = 'label.heading.recoverypayment';
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.isTransaction = true;
+                    scope.showAmountField = true;
+                    scope.taskPermissionName = 'RECOVERYPAYMENT_LOAN';
+                    break;
+                case "adddisbursedetails":
+                    resourceFactory.LoanAccountResource.getLoanAccountDetails({loanId: routeParams.id, associations: 'multiDisburseDetails'}, function (data) {
+                        scope.addDisburseDetails = true;
+                        scope.formData.approvedLoanAmount = data.approvedPrincipal;
+                        scope.expectedDisbursementDate = new Date(data.timeline.expectedDisbursementDate);
+
+                        if(data.disbursementDetails != ""){
+                            scope.disbursementDetails = data.disbursementDetails;
+                        }
+                        if (scope.disbursementDetails.length > 0) {
+                            for (var i in scope.disbursementDetails) {
+                                scope.disbursementDetails[i].expectedDisbursementDate = new Date(scope.disbursementDetails[i].expectedDisbursementDate);
+                            }
+                        }
+                        scope.disbursementDetails.push({
+                        });
+                    });
+
+                    scope.title = 'label.heading.adddisbursedetails';
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'UPDATE_DISBURSEMENTDETAIL';
+                    break;
+                case "deletedisbursedetails":
+                    resourceFactory.LoanAccountResource.getLoanAccountDetails({loanId: routeParams.id, associations: 'multiDisburseDetails'}, function (data) {
+                        scope.deleteDisburseDetails = true;
+                        scope.formData.approvedLoanAmount = data.approvedPrincipal;
+                        scope.expectedDisbursementDate = new Date(data.timeline.expectedDisbursementDate);
+                        if(data.disbursementDetails != ""){
+                            scope.disbursementDetails = data.disbursementDetails;
+                        }
+                        if (scope.disbursementDetails.length > 0) {
+                            for (var i in scope.disbursementDetails) {
+                                scope.disbursementDetails[i].expectedDisbursementDate = new Date(scope.disbursementDetails[i].expectedDisbursementDate);
+                            }
+                        }
+                    });
+
+                    scope.title = 'label.heading.deletedisbursedetails';
+                    scope.showNoteField = false;
+                    scope.showDateField = false;
+                    scope.taskPermissionName = 'UPDATE_DISBURSEMENTDETAIL';
+                    break;
+            }
+
+            scope.cancel = function () {
+                location.path('/viewglimaccount/' +scope.groupId+"/" +routeParams.id +"/"+routeParams.glimId);
+            };
+
+            scope.addTrancheAmounts = function(){
+                scope.showTrancheAmountTotal = 0;
+                for(var i in scope.disbursementDetails ){
+                    scope.showTrancheAmountTotal += Number(scope.disbursementDetails[i].principal);
+                }
+            };
+
+            scope.deleteTranches = function (index) {
+                scope.disbursementDetails.splice(index, 1);
+            };
+
+            scope.addTranches = function () {
+                scope.disbursementDetails.push({
+                });
+            };
+
+            scope.submit = function () {
+                scope.processDate = false;
+                var params = {command: scope.action};
+                if(scope.action == "recoverguarantee"){
+                    params.command = "recoverGuarantees";
+                }
+                if(scope.action == "approve"){
+                    this.formData.expectedDisbursementDate = dateFilter(scope.expectedDisbursementDate, scope.df);
+                    if(scope.disbursementDetails != null) {
+                        this.formData.disbursementData = [];
+                        for (var i in  scope.disbursementDetails) {
+                            this.formData.disbursementData.push({
+                                id: scope.disbursementDetails[i].id,
+                                principal: scope.disbursementDetails[i].principal,
+                                expectedDisbursementDate: dateFilter(scope.disbursementDetails[i].expectedDisbursementDate, scope.df),
+                                loanChargeId : scope.disbursementDetails[i].loanChargeId
+                            });
+                        }
+                    }
+                    if(scope.formData.approvedLoanAmount == null){
+                        scope.formData.approvedLoanAmount = scope.showTrancheAmountTotal;
+                    }
+                }
+
+                if(scope.action == "glimApprove"){
+                    approvalFormData=[];
+                    this.formData.approvalFormData=[];
+                    this.formData.glimPrincipal=0;
+                    for(var j=0;j<scope.glimAccounts.length;j++)
+                    {
+                        approvalFormData[j]={};
+                        approvalFormData[j].loanId=scope.approvalArray[j].childLoanId;
+                        approvalFormData[j].approvedOnDate=dateFilter(scope.formData['approvedOnDate'], scope.df);
+                        approvalFormData[j].approvedLoanAmount=scope.approvalArray[j].approvedLoanAmount;
+                        approvalFormData[j].expectedDisbursementDate=dateFilter(scope.expectedDisbursementDate, scope.df);
+                        approvalFormData[j].locale = scope.optlang.code;
+                        approvalFormData[j].dateFormat = scope.df;
+                        this.formData.glimPrincipal+=parseFloat(approvalFormData[j].approvedLoanAmount);
+                    }
+                    this.formData.locale = scope.optlang.code;
+                    scope.formData.approvedLoanAmount =parseFloat(this.formData.glimPrincipal);
+                    this.formData.approvalFormData=approvalFormData;
+                    // this.formData.expectedDisbursementDate = dateFilter(scope.expectedDisbursementDate, scope.df);
+                    if(scope.disbursementDetails != null) {
+                        this.formData.disbursementData = [];
+                        for (var i in  scope.disbursementDetails) {
+                            this.formData.disbursementData.push({
+                                id: scope.disbursementDetails[i].id,
+                                principal: scope.disbursementDetails[i].principal,
+                                expectedDisbursementDate: dateFilter(scope.disbursementDetails[i].expectedDisbursementDate, scope.df),
+                                loanChargeId : scope.disbursementDetails[i].loanChargeId
+                            });
+                        }
+                    }
+                    if(scope.formData.approvedLoanAmount == null){
+                        scope.formData.approvedLoanAmount = scope.showTrancheAmountTotal;
+                    }
+                }
+
+                if (this.formData[scope.modelName]) {
+                    this.formData[scope.modelName] = dateFilter(this.formData[scope.modelName], scope.df);
+                }
+                if (scope.action != "glimApprove" && scope.action != "undoapproval" && scope.action != "undodisbursal" || scope.action === "paycharge") {
+                    this.formData.locale = scope.optlang.code;
+                    this.formData.dateFormat = scope.df;
+                }
+                if (scope.action == "repayment" || scope.action == "waiveinterest" || scope.action == "writeoff" || scope.action == "close-rescheduled"
+                    || scope.action == "close" || scope.action == "modifytransaction" || scope.action == "recoverypayment" || scope.action == "prepayloan") {
+                    if (scope.action == "modifytransaction") {
+                        params.command = 'modify';
+                        params.transactionId = routeParams.transactionId;
+                    }
+                    params.loanId = scope.accountId;
+                    resourceFactory.loanTrxnsResource.save(params, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                } else if (scope.action == "deleteloancharge") {
+                    resourceFactory.LoanAccountResource.delete({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId}, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                } else if (scope.action === "waivecharge") {
+                    resourceFactory.LoanAccountResource.save({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId, 'command': 'waive'}, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                } else if (scope.action === "paycharge") {
+                    this.formData.transactionDate = dateFilter(this.formData.transactionDate, scope.df);
+                    resourceFactory.LoanAccountResource.save({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId, 'command': 'pay'}, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                } else if (scope.action === "editcharge") {
+                    this.formData.dueDate = dateFilter(this.formData.dueDate, scope.df);
+                    resourceFactory.LoanAccountResource.update({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId}, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                } else if (scope.action === "editdisbursedate") {
+                    this.formData.expectedDisbursementDate = dateFilter(this.formData.expectedDisbursementDate, scope.df);
+                    for(var i in scope.disbursementDetails){
+                        if(scope.disbursementDetails[i].id == scope.id){
+                            scope.disbursementDetails[i].principal = scope.formData.updatedPrincipal;
+                            scope.disbursementDetails[i].expectedDisbursementDate = dateFilter(scope.formData.updatedExpectedDisbursementDate, scope.df);
+                        }
+                    }
+                    this.formData.disbursementData = [];
+                    this.formData.updatedExpectedDisbursementDate = dateFilter(scope.formData.updatedExpectedDisbursementDate, scope.df);
+                    this.formData.expectedDisbursementDate = dateFilter(scope.expectedDisbursementDate, scope.df);
+
+                    for (var i in  scope.disbursementDetails) {
+                        this.formData.disbursementData.push({
+                            id: scope.disbursementDetails[i].id,
+                            principal: scope.disbursementDetails[i].principal,
+                            expectedDisbursementDate: dateFilter(scope.disbursementDetails[i].expectedDisbursementDate, scope.df),
+                            loanChargeId : scope.disbursementDetails[i].loanChargeId
+                        });
+                    }
+                    resourceFactory.LoanEditDisburseResource.update({loanId: routeParams.id, disbursementId: routeParams.disbursementId}, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                }else if(scope.action === "adddisbursedetails" || scope.action === "deletedisbursedetails") {
+                    this.formData.disbursementData = [];
+                    for (var i in  scope.disbursementDetails) {
+                        this.formData.disbursementData.push({
+                            id:scope.disbursementDetails[i].id,
+                            principal: scope.disbursementDetails[i].principal,
+                            expectedDisbursementDate: dateFilter(scope.disbursementDetails[i].expectedDisbursementDate, scope.df),
+                            loanChargeId : scope.disbursementDetails[i].loanChargeId
+                        });
+                    }
+
+                    this.formData.expectedDisbursementDate = dateFilter(scope.expectedDisbursementDate, scope.df);
+                    resourceFactory.LoanAddTranchesResource.update({loanId: routeParams.id}, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                }
+                else if (scope.action == "deleteloancharge") {
+                    resourceFactory.LoanAccountResource.delete({loanId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId}, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                }  else if(scope.action == "Approve"){
+                    this.formData.expectedDisbursementDate = dateFilter(scope.expectedDisbursementDate, scope.df);
+                    if(scope.disbursementDetails != null) {
+                        this.formData.disbursementData = [];
+                        for (var i in  scope.disbursementDetails) {
+                            this.formData.disbursementData.push({
+                                id: scope.disbursementDetails[i].id,
+                                principal: scope.disbursementDetails[i].principal,
+                                expectedDisbursementDate: dateFilter(scope.disbursementDetails[i].expectedDisbursementDate, scope.df),
+                                loanChargeId : scope.disbursementDetails[i].loanChargeId
+                            });
+                        }
+                    }
+                    if(scope.formData.approvedLoanAmount == null){
+                        scope.formData.approvedLoanAmount = scope.showTrancheAmountTotal;
+                    }
+                }
+                else if(scope.action == "glimApprove")
+                {
+                    resourceFactory.glimLoan.post({glimId: scope.glimId,command:'approve'},this.formData,function (data) {
+                        location.path('/viewglimaccount/' +scope.groupId+"/" +routeParams.id +"/"+routeParams.glimId);
+                    });
+                }
+
+                else if(scope.action == "glimDisburse"){
+                    resourceFactory.glimLoan.post({glimId: scope.glimId,command:'disburse'},this.formData,function (data) {
+                        location.path('/viewglimaccount/' +scope.groupId+"/" +routeParams.id +"/"+routeParams.glimId);
+                    });
+                }else if(scope.action == "undoapproval"){
+
+                    resourceFactory.glimLoan.post({glimId: scope.glimId,command:'undoapproval'},scope.formData,function (data) {
+
+                        location.path('/viewloanaccount/' + scope.accountId);
+                    });
+
+                }else if(scope.action == "undodisbursal"){
+
+                    resourceFactory.glimLoan.post({glimId: scope.glimId,command:"undodisbursal"},scope.formData,function (data) {
+                        location.path('/viewloanaccount/' + scope.accountId);
+                    });
+                }
+                else  if(scope.action=="glimrepayment")
+                {
+                    scope.formData.formDataArray=[];
+
+                    var j=0;
+                    for(j=0;j<scope.repaymentArray.length;j++)
+                    {
+                        var temp1={};
+                        temp1.paymentTypeId= scope.formData.paymentTypeId;
+                        temp1.transactionAmount=scope.repaymentArray[j].transactionAmount
+                        temp1.transactionDate=  scope.formData['transactionDate'];
+                        temp1.locale = scope.optlang.code;
+                        temp1.dateFormat = scope.df;
+                        temp1.loanId=scope.repaymentArray[j].childLoanId;
+                        scope.formData.formDataArray.push(temp1);
+                    }
+
+                    resourceFactory.glimLoan.save({glimId: scope.glimId,command:'glimrepayment'}, this.formData, function (data) {
+
+                        location.path('/viewglimaccount/' +scope.groupId+"/" +routeParams.id +"/"+routeParams.glimId);
+
+                    });
+                }
+                else
+                {
+                    params.glimId = scope.glimId;
+                    resourceFactory.glimLoan.save(params, this.formData, function (data) {
+                        location.path('/viewloanaccount/' + data.loanId);
+                    });
+                }
+            };
+
+            scope.$watch('formData.transactionDate',function(){
+                scope.onDateChange();
+            });
+
+            scope.onDateChange = function(){
+                if(scope.processDate) {
+                    var params = {};
+                    params.locale = scope.optlang.code;
+                    params.dateFormat = scope.df;
+                    params.transactionDate = dateFilter(this.formData.transactionDate, scope.df);
+                    params.loanId = scope.accountId;
+                    params.command = 'prepayLoan';
+                    resourceFactory.loanTrxnsTemplateResource.get(params, function (data) {
+                        scope.formData.transactionAmount = data.amount;
+                        if (data.penaltyChargesPortion > 0) {
+                            scope.showPenaltyPortionDisplay = true;
+                        }
+                        scope.principalPortion = data.principalPortion;
+                        scope.interestPortion = data.interestPortion;
+                    });
+                }
+            };
+        }
+    });
+    mifosX.ng.application.controller('GLIMLoanAccountActionsController', ['$scope', 'ResourceFactory', '$location', '$routeParams', 'dateFilter', mifosX.controllers.GLIMLoanAccountActionsController]).run(function ($log) {
+        $log.info("GLIMLoanAccountActionsController initialized");
     });
 }(mifosX.controllers || {}));
 ;(function (module) {
@@ -14579,13 +15394,396 @@
 }(mifosX.controllers || {}));
 ;(function (module) {
     mifosX.controllers = _.extend(module, {
+        NewGLIMAccountController: function (scope, rootScope, routeParams, resourceFactory, location, dateFilter, WizardHandler) {
+
+            scope.response = {success:[],failed:[]};
+            scope.group = {};
+            scope.clientId = routeParams.clientId;
+            scope.groupId = routeParams.groupId;
+            scope.group.selectedclients = [];
+            scope.group.id = routeParams.groupId;
+            scope.staffInSelectedOfficeOnly = true;
+            scope.requestIdentifier = "clientId";
+            scope.inparams = { resourceType: 'template', templateType: 'jlgbulk', lendingStrategy: 300 };
+            scope.selectedProduct = {};
+            scope.loanApplicationCommonData = {};  // user set common data for all the loan applications
+            scope.loanApplicationCommonData.submittedOnDate = new Date();
+            scope.loanApplicationCommonData.expectedDisbursementDate = new Date();
+            scope.loanApplicationCommonData.syncDisbursementWithMeeting = false;
+            scope.datatables = [];
+            scope.noOfTabs = 1;
+            scope.step = '-';
+            scope.formData = {};
+            scope.formDat = {};
+            scope.formData.datatables = [];
+            scope.formDat.datatables = [];
+            scope.tf = "HH:mm";
+            scope.tempDataTables = [];
+            scope.isAllClientSelected = false;
+            scope.gsimAccounts=[];
+            scope.gsimAccountId=0;
+            scope.date = {};
+            scope.chargeFormData = {}; //For charges
+
+            if (scope.group.id) {
+                scope.inparams.groupId = scope.group.id;
+            }
+
+            // Fetch loan products for initital product drop-down
+            resourceFactory.loanResource.get(scope.inparams, function (data) {
+                scope.products = data.productOptions;
+                scope.datatables = data.datatables;
+
+                if (data.clientName) {
+                    scope.clientName = data.clientName;
+                }
+                if (data.group) {
+                    scope.groupName = data.group.name;
+                }
+                scope.handleDatatables(scope.datatables);
+            });
+
+            scope.loanProductChange = function (loanProductId) {
+                _.isUndefined(scope.datatables) ? scope.tempDataTables = [] : scope.tempDataTables = scope.datatables;
+                WizardHandler.wizard().removeSteps(1, scope.tempDataTables.length);
+                scope.inparams.productId = loanProductId;
+                resourceFactory.loanResource.get(scope.inparams, function (data) {
+                    scope.productDetails = data.product;
+                    scope.loanaccountinfo = data;
+                    scope.previewClientLoanAccInfo();
+                    scope.datatables = data.datatables;
+                    scope.handleDatatables(scope.datatables);
+                    scope.loanOfficers = data.loanOfficerOptions;
+                    scope.funds = data.fundOptions;
+                    scope.loanPurposes = data.loanPurposeOptions;
+                    scope.group.clients = data.group.clientMembers.map(function(client) {
+                        client.principal = data.product.principal;
+                        client.charges = data.product.charges.map(function(charge){
+                            charge.isDeleted = false;
+                            return _.clone(charge);});
+                        return client;
+                    });
+                });
+
+                resourceFactory.loanResource.get({resourceType: 'template', templateType: 'collateral', productId: loanProductId, fields: 'id,loanCollateralOptions'}, function (data) {
+                    scope.collateralOptions = data.loanCollateralOptions || [];
+                });
+            }
+
+            scope.previewClientLoanAccInfo = function () {
+                scope.previewRepayment = false;
+                scope.charges = scope.loanaccountinfo.charges || [];
+                scope.formData.disbursementData = scope.loanaccountinfo.disbursementDetails || [];
+                scope.collaterals = [];
+
+                if (scope.loanaccountinfo.calendarOptions) {
+                    scope.formData.syncRepaymentsWithMeeting = true;
+                    scope.formData.syncDisbursementWithMeeting = true;
+                }
+                scope.multiDisburseLoan = scope.loanaccountinfo.multiDisburseLoan;
+                scope.formData.productId = scope.loanaccountinfo.loanProductId;
+                scope.formData.fundId = scope.loanaccountinfo.fundId;
+                scope.formData.principal = scope.loanaccountinfo.principal;
+                scope.formData.loanTermFrequency = scope.loanaccountinfo.termFrequency;
+                scope.formData.loanTermFrequencyType = scope.loanaccountinfo.termPeriodFrequencyType.id;
+                scope.formData.numberOfRepayments = scope.loanaccountinfo.numberOfRepayments;
+                scope.formData.repaymentEvery = scope.loanaccountinfo.repaymentEvery;
+                scope.formData.repaymentFrequencyType = scope.loanaccountinfo.repaymentFrequencyType.id;
+                scope.formData.interestRatePerPeriod = scope.loanaccountinfo.interestRatePerPeriod;
+                scope.formData.amortizationType = scope.loanaccountinfo.amortizationType.id;
+                scope.formData.interestType = scope.loanaccountinfo.interestType.id;
+                scope.formData.interestCalculationPeriodType = scope.loanaccountinfo.interestCalculationPeriodType.id;
+                scope.formData.allowPartialPeriodInterestCalcualtion = scope.loanaccountinfo.allowPartialPeriodInterestCalcualtion;
+                scope.formData.inArrearsTolerance = scope.loanaccountinfo.inArrearsTolerance;
+                scope.formData.graceOnPrincipalPayment = scope.loanaccountinfo.graceOnPrincipalPayment;
+                scope.formData.graceOnInterestPayment = scope.loanaccountinfo.graceOnInterestPayment;
+                scope.formData.graceOnArrearsAgeing = scope.loanaccountinfo.graceOnArrearsAgeing;
+                scope.formData.transactionProcessingStrategyId = scope.loanaccountinfo.transactionProcessingStrategyId;
+                scope.formData.graceOnInterestCharged = scope.loanaccountinfo.graceOnInterestCharged;
+                scope.formData.fixedEmiAmount = scope.loanaccountinfo.fixedEmiAmount;
+                scope.formData.maxOutstandingLoanBalance = scope.loanaccountinfo.maxOutstandingLoanBalance;
+
+                if (scope.loanaccountinfo.isInterestRecalculationEnabled && scope.loanaccountinfo.interestRecalculationData.recalculationRestFrequencyDate) {
+                    scope.date.recalculationRestFrequencyDate = new Date(scope.loanaccountinfo.interestRecalculationData.recalculationRestFrequencyDate);
+                }
+                if (scope.loanaccountinfo.isInterestRecalculationEnabled && scope.loanaccountinfo.interestRecalculationData.recalculationCompoundingFrequencyDate) {
+                    scope.date.recalculationCompoundingFrequencyDate = new Date(scope.loanaccountinfo.interestRecalculationData.recalculationCompoundingFrequencyDate);
+                }
+
+                if(scope.loanaccountinfo.isLoanProductLinkedToFloatingRate) {
+                    scope.formData.isFloatingInterestRate = false ;
+                }
+            }
+
+            scope.addCharge = function () {
+                if (scope.chargeFormData.chargeId) {
+                    resourceFactory.chargeResource.get({chargeId: this.chargeFormData.chargeId, template: 'true'}, function (data) {
+                        data.chargeId = data.id;
+                        scope.charges.push(data);
+                        scope.chargeFormData.chargeId = undefined;
+                    });
+                }
+            }
+
+            scope.deleteCharge = function (index) {
+                scope.charges.splice(index, 1);
+            }
+
+            resourceFactory.groupGSIMAccountResource.get({groupId:routeParams.groupId},function(data)
+            {
+                scope.gsimAccounts=data;
+
+            });
+
+            scope.handleDatatables = function (datatables) {
+                if (!_.isUndefined(datatables) && datatables.length > 0) {
+                    scope.formData.datatables = [];
+                    scope.formDat.datatables = [];
+                    scope.noOfTabs = datatables.length + 1;
+                    angular.forEach(datatables, function (datatable, index) {
+                        scope.updateColumnHeaders(datatable.columnHeaderData);
+                        angular.forEach(datatable.columnHeaderData, function (colHeader, i) {
+                            if (_.isEmpty(scope.formDat.datatables[index])) {
+                                scope.formDat.datatables[index] = {data: {}};
+                            }
+
+                            if (_.isEmpty(scope.formData.datatables[index])) {
+                                scope.formData.datatables[index] = {
+                                    registeredTableName: datatable.registeredTableName,
+                                    data: {locale: scope.optlang.code}
+                                };
+                            }
+
+                            if (datatable.columnHeaderData[i].columnDisplayType == 'DATETIME') {
+                                scope.formDat.datatables[index].data[datatable.columnHeaderData[i].columnName] = {};
+                            }
+                        });
+                    });
+                }
+            };
+
+            scope.updateColumnHeaders = function(columnHeaderData) {
+                var colName = columnHeaderData[0].columnName;
+                if (colName == 'id') {
+                    columnHeaderData.splice(0, 1);
+                }
+                colName = columnHeaderData[0].columnName;
+                if (colName == 'client_id' || colName == 'office_id' || colName == 'group_id' || colName == 'center_id' || colName == 'loan_id' || colName == 'savings_account_id') {
+                    columnHeaderData.splice(0, 1);
+                }
+            };
+
+            //return input type
+            scope.fieldType = function (type) {
+                var fieldType = "";
+                if (type) {
+                    if (type == 'CODELOOKUP' || type == 'CODEVALUE') {
+                        fieldType = 'SELECT';
+                    } else if (type == 'DATE') {
+                        fieldType = 'DATE';
+                    } else if (type == 'DATETIME') {
+                        fieldType = 'DATETIME';
+                    } else if (type == 'BOOLEAN') {
+                        fieldType = 'BOOLEAN';
+                    } else {
+                        fieldType = 'TEXT';
+                    }
+                }
+                return fieldType;
+            };
+
+            scope.checkerInboxAllCheckBoxesClicked = function() {
+                scope.isAllClientSelected = !scope.isAllClientSelected;
+                if(!angular.isUndefined(scope.group.clients)) {
+                    for (var i in scope.group.clients) {
+                        scope.group.clients[i].isSelected = scope.isAllClientSelected;
+                    }
+                }
+            }
+
+            scope.checkerInboxAllCheckBoxesMet = function() {
+                if(!angular.isUndefined(scope.group.clients)) {
+                    var count = 0;
+                    for (var i in scope.group.clients) {
+                        if(scope.group.clients[i].isSelected){
+                            count++;
+                        }
+                    }
+                    scope.isAllClientSelected = (scope.group.clients.length==count);
+                    return scope.isAllClientSelected;
+                }
+            }
+
+            scope.submit = function () {
+
+                if (!_.isUndefined(scope.datatables) && scope.datatables.length > 0) {
+                    angular.forEach(scope.datatables, function (datatable, index) {
+                        scope.columnHeaders = datatable.columnHeaderData;
+                        angular.forEach(scope.columnHeaders, function (colHeader, i) {
+                            scope.dateFormat = scope.df + " " + scope.tf
+                            if (scope.columnHeaders[i].columnDisplayType == 'DATE') {
+                                if (!_.isUndefined(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName])) {
+                                    scope.formData.datatables[index].data[scope.columnHeaders[i].columnName] = dateFilter(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName],
+                                        scope.dateFormat);
+                                    scope.formData.datatables[index].data.dateFormat = scope.dateFormat;
+                                }
+                            } else if (scope.columnHeaders[i].columnDisplayType == 'DATETIME') {
+                                if (!_.isUndefined(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].date) && !_.isUndefined(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].time)) {
+                                    scope.formData.datatables[index].data[scope.columnHeaders[i].columnName] = dateFilter(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].date, scope.df)
+                                        + " " + dateFilter(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].time, scope.tf);
+                                    scope.formData.datatables[index].data.dateFormat = scope.dateFormat;
+                                }
+                            }
+                        });
+                    });
+                } else {
+                    delete scope.formData.datatables;
+                }
+
+                this.batchRequests = [];
+                var totalLoan=0;
+                for (var i in scope.group.clients) {
+
+                    if( scope.group.clients[i].isSelected ){
+                        totalLoan+=parseFloat(scope.group.clients[i].principal);
+                    }
+                }
+
+                var loanApp={};
+                loanApp.charges=[];
+                if (scope.charges.length > 0) {
+
+                    for (var i in scope.charges) {
+                        loanApp.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount, dueDate: dateFilter(scope.charges[i].dueDate, scope.df) });
+                    }
+                }
+
+                console.log("gsim id"+scope.gsimAccountId);
+
+                var child=0;
+                var reqFirstDate = dateFilter(scope.date.first, scope.df);
+                var reqSecondDate = dateFilter(scope.date.second, scope.df);
+                var reqThirdDate = dateFilter(scope.date.third, scope.df);
+                var reqFourthDate = dateFilter(scope.date.fourth, scope.df);
+                var reqFifthDate = dateFilter(scope.date.fifth, scope.df);
+
+                var applicationCount=0;
+                // count number of application
+                for (var i in scope.group.clients) {
+                    if (scope.group.clients[i].isSelected) {
+
+                        applicationCount=applicationCount+1;
+                    }
+                }
+
+                var applicationId= Math.floor((Math.random() * 9999999999) + 1);
+
+                for (var i in scope.group.clients) {
+
+                    if( scope.group.clients[i].isSelected ){
+
+                        var loanApplication = {};
+                        loanApplication.charges=loanApp.charges;
+                        loanApplication.locale = scope.optlang.code;
+                        loanApplication.dateFormat =  scope.df;
+                        loanApplication.groupId = scope.group.id;
+                        loanApplication.clientId = scope.group.clients[i].id;
+                        if(scope.caledars){
+                            loanApplication.calendarId = scope.caledars[0].id;
+                        }
+                        loanApplication.loanType = 'glim';
+                        loanApplication.productId = scope.productDetails.id;
+                        loanApplication.fundId = scope.loanApplicationCommonData.fundId;
+                        loanApplication.numberOfRepayments = scope.formData.numberOfRepayments;
+                        loanApplication.repaymentEvery = scope.formData.repaymentEvery;
+                        loanApplication.repaymentFrequencyType = scope.formData.repaymentFrequencyType;
+                        loanApplication.repaymentsStartingFromDate = reqFourthDate;
+                        loanApplication.interestChargedFromDate = reqThirdDate;
+                        loanApplication.interestRatePerPeriod = scope.formData.interestRatePerPeriod;
+                        loanApplication.amortizationType = scope.productDetails.amortizationType.id;
+                        loanApplication.interestType = scope.formData.interestType;
+                        loanApplication.interestCalculationPeriodType = scope.productDetails.interestCalculationPeriodType.id;
+                        loanApplication.inArrearsTolerance = scope.productDetails.inArrearsTolerance;
+                        loanApplication.graceOnPrincipalPayment = scope.productDetails.graceOnPrincipalPayment;
+                        loanApplication.graceOnInterestPayment = scope.productDetails.graceOnInterestPayment;
+                        loanApplication.transactionProcessingStrategyId = scope.productDetails.transactionProcessingStrategyId;
+                        loanApplication.loanTermFrequency = scope.formData.loanTermFrequency;
+                        loanApplication.loanTermFrequencyType = scope.formData.loanTermFrequencyType;
+                        loanApplication.loanPurposeId = scope.group.clients[i].loanPurposeId;
+                        loanApplication.loanOfficerId = scope.loanApplicationCommonData.loanOfficerId;
+                        loanApplication.principal = scope.group.clients[i].principal;
+
+                        if(child==0)
+                        {
+                            loanApplication.totalLoan=totalLoan;
+                            loanApplication.isParentAccount=true;
+
+                        }
+
+                        loanApplication.expectedDisbursementDate = dateFilter(scope.loanApplicationCommonData.expectedDisbursementDate, scope.df);
+                        loanApplication.submittedOnDate =  dateFilter(scope.loanApplicationCommonData.submittedOnDate, scope.df);
+                        loanApplication.syncDisbursementWithMeeting = scope.loanApplicationCommonData.syncDisbursementWithMeeting;
+                        loanApplication.lastApplication=false;
+                        loanApplication.applicationId=applicationId;
+
+                        if (!_.isUndefined(scope.formData.datatables) && scope.formData.datatables.length > 0) {
+                            loanApplication.datatables = scope.formData.datatables;
+                        }
+
+                        child=child+1;
+
+                        if(child==applicationCount)
+                        {
+                            loanApplication.lastApplication=true;
+                        }
+
+                        this.batchRequests.push({requestId: i, relativeUrl: "loans",
+                            method: "POST", body: JSON.stringify(loanApplication)});
+                    }
+                }
+
+                resourceFactory.batchResource.post({
+                    enclosingTransaction:true},this.batchRequests,  function (data) {
+
+                    for (var i = 0; i < data.length; i++) {
+                        if(data[i].statusCode == 200 )
+                            scope.response.success.push(data[i]);
+                        else
+                            scope.response.failed.push(data[i]);
+                    }
+
+                    if(scope.response.failed.length === 0 ){
+                        location.path('/viewgroup/' + scope.group.id);
+                    }
+                });
+            };
+
+            /* Cancel button action */
+            scope.cancel = function () {
+                if (scope.clientId) {
+                    location.path('/viewclient/' + scope.clientId);
+                } else if (scope.centerEntity) {
+                    location.path('/viewcenter/' + scope.groupId);
+                }
+                if (scope.group.id) {
+                    location.path('/viewgroup/' + scope.group.id);
+                }
+            };
+        } // End of GLIMAccountController
+
+    });
+    mifosX.ng.application.controller('NewGLIMAccountController', ['$scope', '$rootScope', '$routeParams', 'ResourceFactory', '$location', 'dateFilter', 'WizardHandler', mifosX.controllers.NewGLIMAccountController]).run(function ($log) {
+        $log.info("NewGLIMAccountController initialized");
+    });
+}(mifosX.controllers || {}));;(function (module) {
+    mifosX.controllers = _.extend(module, {
         NewJLGLoanAccAppController: function (scope, rootScope, routeParams, resourceFactory, location, dateFilter) {
 
             scope.response = {success:[],failed:[]};
             scope.group = {};
             scope.group.selectedclients = [];
             scope.group.id = routeParams.groupId;
-            scope.staffInSelectedOfficeOnly = false;
+            scope.staffInSelectedOfficeOnly = true;
             scope.requestIdentifier = "clientId";
             scope.inparams = { resourceType: 'template', templateType: 'jlgbulk', lendingStrategy: 300 };
             scope.selectedProduct = {};
@@ -14908,7 +16106,7 @@
                 scope.inparams.templateType = 'individual';
             }
 
-            scope.inparams.staffInSelectedOfficeOnly = false;
+            scope.inparams.staffInSelectedOfficeOnly = true;
 
             resourceFactory.loanResource.get(scope.inparams, function (data) {
                 scope.products = data.productOptions;
@@ -15420,6 +16618,210 @@
         $log.info("RescheduleLoansRequestController initialized");
     });
 }(mifosX.controllers || {}));;(function (module) {
+    mifosX.controllers = _.extend(module, {
+        ViewGLIMaccountController: function (scope, routeParams, resourceFactory, location, route, http, $uibModal, dateFilter, API_VERSION, $sce, $rootScope) {
+
+            var parentLoanAccountNo=routeParams.id;
+            scope.groupId=routeParams.groupId;
+            scope.glimId=routeParams.glimId;
+            scope.groupGLIMAccounts={};
+            scope.productName="";
+            scope.buttons={};
+            scope.routeToLoan = function (id) {
+                location.path('/viewloanaccount/' + id);
+            };
+
+            var parentglimid=0;
+
+
+
+            resourceFactory.glimLoanTemplate.get({glimId: scope.glimId}, function (data) {
+
+                scope.glimAccounts = data;
+
+                for(i=0;i<scope.glimAccounts.length;i++)
+                {
+
+                    var temp={};
+                    temp.parentAccountNo=data[i].parentAccountNo;
+                    temp.clientName=data[i].clientName;
+                    temp.childLoanId=data[i].childLoanId;
+                    temp.childLoanAccountNo=data[i].childLoanAccountNo;
+                    temp.approvedLoanAmount=parseFloat(data[i].childPrincipalAmount);
+
+                    scope.totalLoanAmount+=parseFloat(data[i].childPrincipalAmount);
+
+
+                    scope.approvalArray.push(temp);
+                }
+            });
+
+
+            resourceFactory.groupGLIMAccountResource.get({groupId: routeParams.groupId,parentLoanAccountNo:parentLoanAccountNo }, function (data) {
+                scope.groupGLIMAccounts = data[0];
+                scope.productName=data[0].childGLIMAccounts[0].productName;
+                parentglimid=data[0].childGLIMAccounts[0].id;
+                scope.id=data[0].childGLIMAccounts[0].id;
+                scope.submittedOnDate=data[0].childGLIMAccounts[0].timeline.submittedOnDate;
+                scope.value=data[0].childGLIMAccounts[0].status.value;
+
+                if (scope.groupGLIMAccounts.loanStatus === "SUBMITTED_AND_PENDING_APPROVAL") {
+
+                    scope.buttons = { singlebuttons: [
+                        {
+                            name: "button.approve",
+                            icon: "fa fa-check",
+                            taskPermissionName: 'APPROVE_LOAN'
+                        },
+                        {
+                            name: "button.reject",
+                            icon: "fa fa-times",
+                            taskPermissionName: 'REJECT_LOAN'
+                        }
+                    ]
+                    };
+                }
+
+                if (data[0].loanStatus === "APPROVED") {
+                    scope.buttons = { singlebuttons: [
+                        {
+                            name: "button.disburse",
+                            icon: "fa fa-flag",
+                            taskPermissionName: 'DISBURSE_LOAN'
+                        },
+                        {
+                            name: "button.undoapproval",
+                            icon: "fa fa-undo",
+                            taskPermissionName: 'APPROVALUNDO_LOAN'
+                        }
+                    ]
+                    };
+                }
+
+                if (data[0].loanStatus === "ACTIVE") {
+                    scope.buttons = { singlebuttons: [
+                        {
+                            name: "button.makerepayment",
+                            icon: "fa fa-dollar",
+                            taskPermissionName: 'REPAYMENT_LOAN'
+                        },
+                        {
+                            name: "button.undodisbursal",
+                            icon: "fa fa-undo",
+                            taskPermissionName: 'DISBURSALUNDO_LOAN'
+                        }
+                    ]
+                    };
+                }
+            });
+
+            scope.clickEvent = function (eventName, accountId) {
+                eventName = eventName || "";
+                switch (eventName) {
+                    case "addloancharge":
+                        location.path('/addloancharge/' + accountId);
+                        break;
+                    case "addcollateral":
+                        location.path('/addcollateral/' + accountId);
+                        break;
+                    case "assignloanofficer":
+                        location.path('/assignloanofficer/' + accountId);
+                        break;
+                    case "modifyapplication":
+                        location.path('/editloanaccount/' + parentglimid);
+                        break;
+                    case "approve":
+                        location.path('/glimloanaccount/' + routeParams.id + '/glimApprove/'+accountId +'/'+scope.groupId);   //accountid is glimId and  routerparamsid is child loanid
+                        break;
+                    case "reject":
+                        location.path('/glimloanaccount/' + routeParams.id +'/reject/'+accountId+'/'+scope.groupId);
+                        break;
+                    case "withdrawnbyclient":
+                        location.path('/loanaccount/' + accountId + '/withdrawnByApplicant');
+                        break;
+                    case "delete":
+                        resourceFactory.LoanAccountResource.delete({loanId: accountId}, {}, function (data) {
+                            var destination = '/viewgroup/' + data.groupId;
+                            if (data.clientId) destination = '/viewclient/' + data.clientId;
+                            location.path(destination);
+                        });
+                        break;
+                    case "undoapproval":
+                        location.path('/glimloanaccount/' + routeParams.id + '/undoapproval/'+ accountId +'/'+scope.groupId);
+                        break;
+                    case "disburse":
+                        location.path('/glimloanaccount/' + routeParams.id + '/glimDisburse/'+accountId+'/'+scope.groupId);
+                        break;
+                    case "disbursetosavings":
+                        location.path('/loanaccount/' + accountId + '/disbursetosavings');
+                        break;
+                    case "undodisbursal":
+                        location.path('/glimloanaccount/'+ routeParams.id + '/undodisbursal/'+ accountId +'/'+scope.groupId);
+                        break;
+                    case "makerepayment":
+                        location.path('/glimloanaccount/' + routeParams.id + '/glimrepayment/'+accountId+'/'+scope.groupId);
+                        break;
+                    case "prepayment":
+                        location.path('/loanaccount/' + accountId + '/prepayloan');
+                        break;
+                    case "waiveinterest":
+                        location.path('/loanaccount/' + accountId + '/waiveinterest');
+                        break;
+                    case "writeoff":
+                        location.path('/loanaccount/' + accountId + '/writeoff');
+                        break;
+                    case "recoverypayment":
+                        location.path('/loanaccount/' + accountId + '/recoverypayment');
+                        break;
+                    case "close-rescheduled":
+                        location.path('/loanaccount/' + accountId + '/close-rescheduled');
+                        break;
+                    case "transferFunds":
+                        if (scope.loandetails.clientId) {
+                            location.path('/accounttransfers/fromloans/' + accountId);
+                        }
+                        break;
+                    case "close":
+                        location.path('/loanaccount/' + accountId + '/close');
+                        break;
+                    case "createguarantor":
+                        location.path('/guarantor/' + accountId);
+                        break;
+                    case "listguarantor":
+                        location.path('/listguarantors/' + accountId);
+                        break;
+                    case "recoverguarantee":
+                        location.path('/loanaccount/' + accountId + '/recoverguarantee');
+                        break;
+                    case "unassignloanofficer":
+                        location.path('/loanaccount/' + accountId + '/unassignloanofficer');
+                        break;
+                    case "loanscreenreport":
+                        location.path('/loanscreenreport/' + accountId);
+                        break;
+                    case "reschedule":
+                        location.path('/loans/' +accountId + '/reschedule');
+                        break;
+                    case "adjustrepaymentschedule":
+                        location.path('/adjustrepaymentschedule/'+accountId) ;
+                        break ;
+                    case "foreclosure":
+                        location.path('loanforeclosure/' + accountId);
+                        break;
+                }
+            };
+
+            resourceFactory.groupResource.get({groupId: routeParams.groupId, associations: 'all'}, function (data) {
+                scope.group = data;
+
+            });
+        }
+    });
+    mifosX.ng.application.controller('ViewGLIMaccountController', ['$scope', '$routeParams', 'ResourceFactory', '$location', '$route', '$http', '$uibModal', 'dateFilter', 'API_VERSION', '$sce', '$rootScope', mifosX.controllers.ViewGLIMaccountController]).run(function ($log) {
+        $log.info("ViewGLIMaccountController initialized");
+    });
+}(mifosX.controllers || {}));
+;(function (module) {
     mifosX.controllers = _.extend(module, {
         ViewLoanChargeController: function (scope, resourceFactory, routeParams, location, $uibModal) {
 
@@ -17009,7 +18411,6 @@
                 scope.islogofoldernamefetched = true;
                 $http.get('scripts/config/LogoConfig.json').then(function onSuccess(response) {
                     var datas = response.data;
-                    console.log('LogoConfig: ...',datas )
                     for(var i in datas){
                         var data = datas[i];
                         if(data.tenantIdentifier != undefined && data.tenantIdentifier == $rootScope.tenantIdentifier){
@@ -28880,6 +30281,218 @@
 }(mifosX.controllers || {}));
 ;(function (module) {
     mifosX.controllers = _.extend(module, {
+        AddNewMemberToGSIMController: function (scope, resourceFactory, location, routeParams, dateFilter) {
+            scope.products = [];
+            scope.fieldOfficers = [];
+            scope.formData = {};
+            scope.accountId = routeParams.gsimChildAccountId;
+            scope.groupId=routeParams.groupId;
+            scope.gsimAccountNo=routeParams.parentGSIMAccounNo;
+            scope.charges = [];
+            scope.restrictDate = new Date();
+            scope.childAccounts=[];
+            scope.group=[];
+            scope.group.clients=[];
+            resourceFactory.savingsResource.get({accountId: scope.accountId, template: 'true', associations: 'charges',staffInSelectedOfficeOnly:'true'}, function (data) {
+                scope.data = data;
+                scope.charges = data.charges || [];
+                if (scope.charges) {
+                    for (var i in scope.charges) {
+                        if (scope.charges[i].chargeTimeType.value == 'Annual Fee') {
+                            scope.charges[i].feeOnMonthDay.push(2013);
+                            scope.charges[i].feeOnMonthDay = new Date(dateFilter(scope.charges[i].feeOnMonthDay, scope.df));
+                        } else if (scope.charges[i].chargeTimeType.value == "Monthly Fee") {
+                            scope.charges[i].feeOnMonthDay.push(2013);
+                            scope.charges[i].feeOnMonthDay = new Date(dateFilter(scope.charges[i].feeOnMonthDay, scope.df));
+                        } else if (scope.charges[i].chargeTimeType.value == 'Specified due date') {
+                            scope.charges[i].dueDate = new Date(dateFilter(scope.charges[i].dueDate, scope.df));
+                        }
+                    }
+                }
+
+                if (data.clientId) {
+                    scope.formData.clientId = data.clientId;
+                    scope.clientName = data.clientName;
+                }
+                if (data.groupId) {
+                    scope.formData.groupId = data.groupId;
+                    scope.groupName = data.groupName;
+                }
+                scope.formData.productId = data.savingsProductId;
+                scope.products = data.productOptions;
+                if (data.fieldOfficerId != 0)scope.formData.fieldOfficerId = data.fieldOfficerId;
+                if (data.timeline) {
+                    var submittedOnDate = dateFilter(data.timeline.submittedOnDate, scope.df);
+                    scope.formData.submittedOnDate = new Date(submittedOnDate);
+                }
+                scope.formData.externalId = data.externalId;
+                scope.fieldOfficers = data.fieldOfficerOptions;
+                scope.formData.nominalAnnualInterestRate = data.nominalAnnualInterestRate;
+                scope.formData.minRequiredOpeningBalance = data.minRequiredOpeningBalance;
+                scope.formData.lockinPeriodFrequency = data.lockinPeriodFrequency;
+                scope.formData.withdrawalFeeAmount = data.withdrawalFeeAmount;
+                scope.formData.withdrawalFeeForTransfers = data.withdrawalFeeForTransfers;
+                scope.formData.allowOverdraft = data.allowOverdraft;
+                scope.formData.overdraftLimit = data.overdraftLimit;
+                scope.formData.nominalAnnualInterestRateOverdraft = data.nominalAnnualInterestRateOverdraft;
+                scope.formData.minOverdraftForInterestCalculation = data.minOverdraftForInterestCalculation;
+                scope.formData.enforceMinRequiredBalance = data.enforceMinRequiredBalance;
+                scope.formData.minRequiredBalance = data.minRequiredBalance;
+                scope.formData.withHoldTax = data.withHoldTax;
+
+                if (data.interestCompoundingPeriodType) scope.formData.interestCompoundingPeriodType = data.interestCompoundingPeriodType.id;
+                if (data.interestPostingPeriodType) scope.formData.interestPostingPeriodType = data.interestPostingPeriodType.id;
+                if (data.interestCalculationType) scope.formData.interestCalculationType = data.interestCalculationType.id;
+                if (data.interestCalculationDaysInYearType) scope.formData.interestCalculationDaysInYearType = data.interestCalculationDaysInYearType.id;
+                if (data.lockinPeriodFrequencyType) scope.formData.lockinPeriodFrequencyType = data.lockinPeriodFrequencyType.id;
+                if (data.withdrawalFeeType) scope.formData.withdrawalFeeType = data.withdrawalFeeType.id;
+            });
+
+            scope.changeProduct = function () {
+                var inparams = {productId: scope.formData.productId};
+                if (scope.formData.clientId) inparams.clientId = scope.formData.clientId;
+                if (scope.formData.groupId) inparams.groupId = scope.formData.groupId;
+                resourceFactory.savingsTemplateResource.get(inparams, function (data) {
+
+                    scope.data = data;
+                    scope.fieldOfficers = data.fieldOfficerOptions;
+                    scope.formData.nominalAnnualInterestRate = data.nominalAnnualInterestRate;
+                    scope.formData.minRequiredOpeningBalance = data.minRequiredOpeningBalance;
+                    scope.formData.lockinPeriodFrequency = data.lockinPeriodFrequency;
+                    scope.formData.withdrawalFeeAmount = data.withdrawalFeeAmount;
+                    scope.formData.withdrawalFeeForTransfers = data.withdrawalFeeForTransfers;
+                    scope.formData.withHoldTax = data.withHoldTax;
+
+                    if (data.interestCompoundingPeriodType) scope.formData.interestCompoundingPeriodType = data.interestCompoundingPeriodType.id;
+                    if (data.interestPostingPeriodType) scope.formData.interestPostingPeriodType = data.interestPostingPeriodType.id;
+                    if (data.interestCalculationType) scope.formData.interestCalculationType = data.interestCalculationType.id;
+                    if (data.interestCalculationDaysInYearType) scope.formData.interestCalculationDaysInYearType = data.interestCalculationDaysInYearType.id;
+                    if (data.lockinPeriodFrequencyType) scope.formData.lockinPeriodFrequencyType = data.lockinPeriodFrequencyType.id;
+                    if (data.withdrawalFeeType) scope.formData.withdrawalFeeType = data.withdrawalFeeType.id;
+                });
+            }
+
+            scope.addCharge = function (chargeId) {
+                scope.errorchargeevent = false;
+                if (chargeId) {
+                    resourceFactory.chargeResource.get({chargeId: chargeId, template: 'true'}, function (data) {
+                        data.chargeId = data.id;
+                        if (data.chargeTimeType.value == "Annual Fee") {
+                            if (data.feeOnMonthDay) {
+                                data.feeOnMonthDay.push(2013);
+                                data.feeOnMonthDay = new Date(dateFilter(data.feeOnMonthDay, scope.df));
+                            }
+                        } else if (data.chargeTimeType.value == "Monthly Fee") {
+                            if (data.feeOnMonthDay) {
+                                data.feeOnMonthDay.push(2013);
+                                data.feeOnMonthDay = new Date(dateFilter(data.feeOnMonthDay, scope.df));
+                            }
+                        }
+
+                        delete data.id;
+                        scope.charges.push(data);
+                        scope.chargeId = undefined;
+                    });
+                } else {
+                    scope.errorchargeevent = true;
+                    scope.labelchargeerror = "selectcharge";
+                }
+            }
+
+            scope.deleteCharge = function (index) {
+                scope.charges.splice(index, 1);
+            }
+
+            scope.cancel = function () {
+                location.path('/viewsavingaccount/' + scope.accountId);
+            }
+
+            scope.clientsNotPresentInGSIM=[];
+            scope.childGSIMAccounts=[];
+            resourceFactory.groupClients.get({groupId:scope.groupId,associations:'activeClientMembers'}, function (data) {
+
+                scope.group= data;
+                scope.group.clients= data.activeClientMembers;
+
+                resourceFactory.groupGSIMAccountResource.get({groupId:scope.groupId,parentGSIMAccountNo:scope.gsimAccountNo}, function (data1) {
+
+                    scope.childGSIMAccounts=data1[0].childGSIMAccounts;
+
+                    for(var i=0;i<scope.group.clients.length;i++)
+                    {
+
+                        if(scope.childGSIMAccounts[i] == null)
+                        {
+                            scope.clientsNotPresentInGSIM.push(scope.group.clients[i]);
+
+                        }
+                        else
+                        {
+                            if(scope.childGSIMAccounts[i].clientId!=scope.group.clients[i].id)
+                            {
+                                scope.clientsNotPresentInGSIM.push(scope.group.clients[i]);
+                            }
+                        }
+                    }
+                });
+            });
+
+            scope.checkerInboxAllCheckBoxesMet = function() {
+                if(!angular.isUndefined(scope.clientsNotPresentInGSIM)) {
+                    var count = 0;
+                    for (var i in scope.clientsNotPresentInGSIM) {
+                        if(scope.clientsNotPresentInGSIM[i].isSelected){
+                            count++;
+                        }
+                    }
+                    scope.isAllClientSelected = (scope.clientsNotPresentInGSIM.length==count);
+                    return scope.isAllClientSelected;
+                }
+            }
+
+            scope.checkerInboxAllCheckBoxesClicked = function() {
+                scope.isAllClientSelected = !scope.isAllClientSelected;
+                if(!angular.isUndefined(scope.clientsNotPresentInGSIM)) {
+                    for (var i in scope.clientsNotPresentInGSIM) {
+                        scope.clientsNotPresentInGSIM[i].isSelected = scope.isAllClientSelected;
+                    }
+                }
+            }
+
+            scope.submit = function () {
+                if (this.formData.submittedOnDate)  this.formData.submittedOnDate = dateFilter(this.formData.submittedOnDate, scope.df);
+                this.formData.locale = scope.optlang.code;
+                this.formData.dateFormat = scope.df;
+                this.formData.monthDayFormat = "dd MMM";
+                scope.formData.charges = [];
+                if (scope.charges.length > 0) {
+                    for (var i in scope.charges) {
+                        if (scope.charges[i].chargeTimeType.value == 'Annual Fee') {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                feeOnMonthDay: dateFilter(scope.charges[i].feeOnMonthDay, 'dd MMMM')});
+                        } else if (scope.charges[i].chargeTimeType.value == 'Specified due date') {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                dueDate: dateFilter(scope.charges[i].dueDate, scope.df)});
+                        } else if (scope.charges[i].chargeTimeType.value == 'Monthly Fee') {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                feeOnMonthDay: dateFilter(scope.charges[i].feeOnMonthDay, 'dd MMMM'), feeInterval: scope.charges[i].feeInterval});
+                        } else {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount});
+                        }
+                    }
+                }
+
+                resourceFactory.savingsResource.update({'accountId': scope.accountId}, this.formData, function (data) {
+                    location.path('/viewsavingaccount/' + data.savingsId);
+                });
+            };
+        }
+    });
+    mifosX.ng.application.controller('AddNewMemberToGSIMController', ['$scope', 'ResourceFactory', '$location', '$routeParams', 'dateFilter', mifosX.controllers.AddNewMemberToGSIMController]).run(function ($log) {
+        $log.info("AddNewMemberToGSIMController initialized");
+    });
+}(mifosX.controllers || {}));;(function (module) {
+    mifosX.controllers = _.extend(module, {
         AddNewSavingsChargeController: function (scope, resourceFactory, location, routeParams, dateFilter) {
             scope.offices = [];
             scope.cancelRoute = routeParams.id;
@@ -29122,6 +30735,338 @@
     });
 }(mifosX.controllers || {}));;(function (module) {
     mifosX.controllers = _.extend(module, {
+        CreateGSIMAccountController: function (scope, resourceFactory, location, routeParams, dateFilter, WizardHandler) {
+            scope.products = [];
+            scope.fieldOfficers = [];
+            scope.formData1 = {};
+            scope.formData = {};
+            scope.formDat = {};
+            scope.restrictDate = new Date();
+            scope.clientId = routeParams.clientId;
+            scope.groupId = routeParams.groupId;
+            scope.date = {};
+            scope.date.submittedOnDate = new Date();
+            scope.datatables = [];
+            scope.noOfTabs = 1;
+            scope.step = '-';
+            scope.formData1.datatables = [];
+            scope.formDat.datatables = [];
+            scope.tf = "HH:mm";
+            scope.tempDataTables = [];
+            scope.isAllClientSelected = false;
+            scope.group={};
+            scope.group.clients=[];
+
+            if (routeParams.centerEntity) {
+                scope.centerEntity = true;
+            }
+            scope.charges = [];
+            scope.inparams = {};
+            if (scope.clientId) {
+                scope.inparams.clientId = scope.clientId
+            }
+            ;
+            if (scope.groupId) {
+                scope.inparams.groupId = scope.groupId
+            }
+            ;
+            if (scope.centerId) {
+                scope.inparams.centerId = scope.centerId
+            }
+            ;
+
+            scope.inparams.staffInSelectedOfficeOnly = true;
+
+            resourceFactory.groupClients.get({groupId:scope.groupId,associations:'activeClientMembers'}, function (data) {
+
+                scope.group= data;
+                scope.group.clients= data.activeClientMembers;
+            });
+
+            scope.checkerInboxAllCheckBoxesMet = function() {
+                if(!angular.isUndefined(scope.group.clients)) {
+                    var count = 0;
+                    for (var i in scope.group.clients) {
+                        if(scope.group.clients[i].isSelected){
+                            count++;
+                        }
+                    }
+                    scope.isAllClientSelected = (scope.group.clients.length==count);
+                    return scope.isAllClientSelected;
+                }
+            }
+            scope.checkerInboxAllCheckBoxesClicked = function() {
+                scope.isAllClientSelected = !scope.isAllClientSelected;
+                if(!angular.isUndefined(scope.group.clients)) {
+                    for (var i in scope.group.clients) {
+                        scope.group.clients[i].isSelected = scope.isAllClientSelected;
+                    }
+                }
+            }
+            resourceFactory.savingsTemplateResource.get(scope.inparams, function (data) {
+                scope.products = data.productOptions;
+                scope.chargeOptions = data.chargeOptions;
+                scope.clientName = data.clientName;
+                scope.groupName = data.groupName;
+                scope.datatables = data.datatables;
+                scope.handleDatatables(scope.datatables);
+            });
+
+            scope.handleDatatables = function (datatables) {
+                if (!_.isUndefined(datatables) && datatables.length > 0) {
+                    scope.formData1.datatables = [];
+                    scope.formDat.datatables = [];
+                    scope.noOfTabs = datatables.length + 1;
+                    angular.forEach(datatables, function (datatable, index) {
+                        scope.updateColumnHeaders(datatable.columnHeaderData);
+                        angular.forEach(datatable.columnHeaderData, function (colHeader, i) {
+                            if (_.isEmpty(scope.formDat.datatables[index])) {
+                                scope.formDat.datatables[index] = {data: {}};
+                            }
+
+                            if (_.isEmpty(scope.formData1.datatables[index])) {
+                                scope.formData1.datatables[index] = {
+                                    registeredTableName: datatable.registeredTableName,
+                                    data: {locale: scope.optlang.code}
+                                };
+                            }
+
+                            if (datatable.columnHeaderData[i].columnDisplayType == 'DATETIME') {
+                                scope.formDat.datatables[index].data[datatable.columnHeaderData[i].columnName] = {};
+                            }
+                        });
+                    });
+                }
+            };
+
+            scope.updateColumnHeaders = function(columnHeaderData) {
+                var colName = columnHeaderData[0].columnName;
+                if (colName == 'id') {
+                    columnHeaderData.splice(0, 1);
+                }
+
+                colName = columnHeaderData[0].columnName;
+                if (colName == 'client_id' || colName == 'office_id' || colName == 'group_id' || colName == 'center_id' || colName == 'loan_id' || colName == 'savings_account_id') {
+                    columnHeaderData.splice(0, 1);
+                }
+            };
+
+            scope.changeProduct = function () {
+                _.isUndefined(scope.datatables) ? scope.tempDataTables = [] : scope.tempDataTables = scope.datatables;
+                WizardHandler.wizard().removeSteps(1, scope.tempDataTables.length);
+                scope.inparams.productId = scope.formData1.productId;
+                resourceFactory.savingsTemplateResource.get(scope.inparams, function (data) {
+
+                    scope.data = data;
+                    scope.charges = data.charges;
+
+                    for (var i in scope.charges) {
+                        if (scope.charges[i].chargeTimeType.value === "Annual Fee" && scope.charges[i].feeOnMonthDay) {
+                            scope.charges[i].feeOnMonthDay.push('2013');
+                            scope.charges[i].feeOnMonthDay = new Date(dateFilter(scope.charges[i].feeOnMonthDay, scope.df));
+                        }
+                    }
+                    scope.fieldOfficers = data.fieldOfficerOptions;
+                    scope.formData1.nominalAnnualInterestRate = data.nominalAnnualInterestRate;
+                    scope.formData1.minRequiredOpeningBalance = data.minRequiredOpeningBalance;
+                    scope.formData1.lockinPeriodFrequency = data.lockinPeriodFrequency;
+                    scope.formData1.withdrawalFeeAmount = data.withdrawalFeeAmount;
+                    scope.formData1.withdrawalFeeForTransfers = data.withdrawalFeeForTransfers;
+                    scope.formData1.allowOverdraft = data.allowOverdraft;
+                    scope.formData1.overdraftLimit = data.overdraftLimit;
+                    scope.formData1.nominalAnnualInterestRateOverdraft = data.nominalAnnualInterestRateOverdraft;
+                    scope.formData1.minOverdraftForInterestCalculation = data.minOverdraftForInterestCalculation;
+                    scope.formData1.enforceMinRequiredBalance = data.enforceMinRequiredBalance;
+                    scope.formData1.minRequiredBalance = data.minRequiredBalance;
+                    scope.formData1.withHoldTax = data.withHoldTax;
+
+                    if (data.interestCompoundingPeriodType) scope.formData1.interestCompoundingPeriodType = data.interestCompoundingPeriodType.id;
+                    if (data.interestPostingPeriodType) scope.formData1.interestPostingPeriodType = data.interestPostingPeriodType.id;
+                    if (data.interestCalculationType) scope.formData1.interestCalculationType = data.interestCalculationType.id;
+                    if (data.interestCalculationDaysInYearType) scope.formData1.interestCalculationDaysInYearType = data.interestCalculationDaysInYearType.id;
+                    if (data.lockinPeriodFrequencyType) scope.formData1.lockinPeriodFrequencyType = data.lockinPeriodFrequencyType.id;
+                    if (data.withdrawalFeeType) scope.formData1.withdrawalFeeType = data.withdrawalFeeType.id;
+                    scope.datatables = data.datatables;
+                    scope.handleDatatables(scope.datatables);
+                });
+            };
+
+            scope.addCharge = function (chargeId) {
+                scope.errorchargeevent = false;
+                if (chargeId) {
+                    resourceFactory.chargeResource.get({chargeId: chargeId, template: 'true'}, function (data) {
+                        data.chargeId = data.id;
+                        if (data.chargeTimeType.value == "Annual Fee") {
+                            if (data.feeOnMonthDay) {
+                                data.feeOnMonthDay.push(2013);
+                                data.feeOnMonthDay = new Date(dateFilter(data.feeOnMonthDay, scope.df));
+                            }
+                        } else if (data.chargeTimeType.value == "Monthly Fee") {
+                            if (data.feeOnMonthDay) {
+                                data.feeOnMonthDay.push(2013);
+                                data.feeOnMonthDay = new Date(dateFilter(data.feeOnMonthDay, scope.df));
+                            }
+                        }
+                        scope.charges.push(data);
+                        scope.chargeId = undefined;
+                    });
+                } else {
+                    scope.errorchargeevent = true;
+                    scope.labelchargeerror = "selectcharge";
+                }
+            }
+
+            scope.deleteCharge = function (index) {
+                scope.charges.splice(index, 1);
+            }
+
+            scope.fieldType = function (type) {
+                var fieldType = "";
+                if (type) {
+                    if (type == 'CODELOOKUP' || type == 'CODEVALUE') {
+                        fieldType = 'SELECT';
+                    } else if (type == 'DATE') {
+                        fieldType = 'DATE';
+                    } else if (type == 'DATETIME') {
+                        fieldType = 'DATETIME';
+                    } else if (type == 'BOOLEAN') {
+                        fieldType = 'BOOLEAN';
+                    } else {
+                        fieldType = 'TEXT';
+                    }
+                }
+                return fieldType;
+            };
+
+            var applicationId= Math.floor((Math.random() * 9999999999) + 1);
+            scope.submit = function () {
+
+                if (scope.date) {
+                    this.formData1.submittedOnDate = dateFilter(scope.date.submittedOnDate, scope.df);
+                }
+                this.formData1.locale = scope.optlang.code;
+                this.formData1.dateFormat = scope.df;
+                this.formData1.monthDayFormat = "dd MMM";
+                this.formData1.charges = [];
+
+                if (scope.charges.length > 0) {
+
+                    for (var i in scope.charges) {
+
+                        if (scope.charges[i].chargeTimeType.value == 'Annual Fee') {
+                            this.formData1.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                feeOnMonthDay: dateFilter(scope.charges[i].feeOnMonthDay, 'dd MMMM')});
+                        } else if (scope.charges[i].chargeTimeType.value == 'Specified due date') {
+                            this.formData1.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                dueDate: dateFilter(scope.charges[i].dueDate, scope.df)});
+                        } else if (scope.charges[i].chargeTimeType.value == 'Monthly Fee') {
+                            this.formData1.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                feeOnMonthDay: dateFilter(scope.charges[i].feeOnMonthDay, 'dd MMMM'), feeInterval: scope.charges[i].feeInterval});
+                        } else if (scope.charges[i].chargeTimeType.value == 'Weekly Fee') {
+                            this.formData1.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount, dueDate: dateFilter(scope.charges[i].dueDate, scope.df), feeInterval: scope.charges[i].feeInterval});
+                        }
+                        else {
+                            this.formData1.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount});
+                        }
+                    }
+                }
+
+                if (!_.isUndefined(scope.datatables) && scope.datatables.length > 0) {
+                    angular.forEach(scope.datatables, function (datatable, index) {
+                        scope.columnHeaders = datatable.columnHeaderData;
+                        angular.forEach(scope.columnHeaders, function (colHeader, i) {
+                            scope.dateFormat = scope.df + " " + scope.tf
+                            if (scope.columnHeaders[i].columnDisplayType == 'DATE') {
+                                if (!_.isUndefined(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName])) {
+                                    scope.formData1.datatables[index].data[scope.columnHeaders[i].columnName] = dateFilter(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName],
+                                        scope.dateFormat);
+                                    scope.formData1.datatables[index].data.dateFormat = scope.dateFormat;
+                                }
+                            } else if (scope.columnHeaders[i].columnDisplayType == 'DATETIME') {
+                                if (!_.isUndefined(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].date) && !_.isUndefined(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].time)) {
+                                    scope.formData1.datatables[index].data[scope.columnHeaders[i].columnName] = dateFilter(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].date, scope.df)
+                                        + " " + dateFilter(scope.formDat.datatables[index].data[scope.columnHeaders[i].columnName].time, scope.tf);
+                                    scope.formData1.datatables[index].data.dateFormat = scope.dateFormat;
+                                }
+                            }
+                        });
+                    });
+                } else {
+                    delete scope.formData1.datatables;
+                }
+
+                //count the number of selected applications
+                var applicationCount=0;
+                // count number of application
+                for (var i in scope.group.clients) {
+                    if (scope.group.clients[i].isSelected) {
+
+                        applicationCount=applicationCount+1;
+                    }
+                }
+                console.log('application count is'+applicationCount);
+                scope.formData1.isGSIM=true;
+                this.formData.clientArray=[];
+                scope.formData1.groupId = scope.groupId; //
+                scope.formData1.applicationId=applicationId; //
+                var count=0;
+                scope.formData1.lastApplication=true;
+                var z=0;
+                for(var c in scope.group.clients)
+                {
+                    if(scope.group.clients[c].isSelected)
+                    {
+                        if(z===0)
+                        {
+                            scope.formData1.isParentAccount=true;
+                        }
+                        z++;
+                        if(z===applicationCount)
+                        {
+                            console.log("z is"+z);
+                            console.log("val of z"+applicationCount);
+                            scope.formData1.lastApplication=true; //
+                        }
+                        var temp={};
+                        temp=JSON.parse(JSON.stringify(scope.formData1));
+                        temp.clientId=scope.group.clients[c].id;
+                        if(z!=applicationCount)
+                        {
+                            delete temp.lastApplication;
+                        }
+                        this.formData.clientArray[count++]=temp;
+
+                        if(z==1)
+                        {
+                            delete scope.formData1.isParentAccount;
+                        }
+
+                    }
+                }
+
+                resourceFactory.gsimResource.save(this.formData, function (data) {
+                    location.path('/viewgroup/'+ scope.groupId);
+                });
+            };
+
+            scope.cancel = function () {
+                if (scope.clientId) {
+                    location.path('/viewclient/' + scope.clientId);
+                } else if (scope.centerEntity) {
+                    location.path('/viewcenter/' + scope.groupId);
+                } else {
+                    location.path('/viewgroup/' + scope.groupId);
+                }
+            }
+        }
+    });
+    mifosX.ng.application.controller('CreateGSIMAccountController', ['$scope', 'ResourceFactory', '$location', '$routeParams', 'dateFilter', 'WizardHandler', mifosX.controllers.CreateGSIMAccountController]).run(function ($log) {
+        $log.info("CreateGSIMAccountController initialized");
+    });
+}(mifosX.controllers || {}));
+
+;(function (module) {
+    mifosX.controllers = _.extend(module, {
         CreateSavingAccountController: function (scope, $rootScope, resourceFactory, location, routeParams, dateFilter,WizardHandler) {
             scope.products = [];
             scope.fieldOfficers = [];
@@ -29160,7 +31105,7 @@
             }
 
 
-            scope.inparams.staffInSelectedOfficeOnly = false;
+            scope.inparams.staffInSelectedOfficeOnly = true;
             
             resourceFactory.savingsTemplateResource.get(scope.inparams, function (data) {
                 scope.products = data.productOptions;
@@ -29402,6 +31347,169 @@
 }(mifosX.controllers || {}));
 ;(function (module) {
     mifosX.controllers = _.extend(module, {
+        EditGSIMAccountController: function (scope, resourceFactory, location, routeParams, dateFilter) {
+            scope.products = [];
+            scope.fieldOfficers = [];
+            scope.formData = {};
+            scope.accountId = routeParams.gsimChildAccountId;
+            scope.parentAccountId=routeParams.parentGSIMId;
+            scope.groupId=routeParams.groupId;
+            scope.gsimAccountNumber=routeParams.gsimAccountNumber;
+            scope.charges = [];
+            scope.restrictDate = new Date();
+            resourceFactory.savingsResource.get({accountId: scope.accountId, template: 'true', associations: 'charges',staffInSelectedOfficeOnly:'true'}, function (data) {
+                scope.data = data;
+                scope.charges = data.charges || [];
+                if (scope.charges) {
+                    for (var i in scope.charges) {
+                        if (scope.charges[i].chargeTimeType.value == 'Annual Fee') {
+                            scope.charges[i].feeOnMonthDay.push(2013);
+                            scope.charges[i].feeOnMonthDay = new Date(dateFilter(scope.charges[i].feeOnMonthDay, scope.df));
+                        } else if (scope.charges[i].chargeTimeType.value == "Monthly Fee") {
+                            scope.charges[i].feeOnMonthDay.push(2013);
+                            scope.charges[i].feeOnMonthDay = new Date(dateFilter(scope.charges[i].feeOnMonthDay, scope.df));
+                        } else if (scope.charges[i].chargeTimeType.value == 'Specified due date') {
+                            scope.charges[i].dueDate = new Date(dateFilter(scope.charges[i].dueDate, scope.df));
+                        }
+                    }
+                }
+
+                if (data.clientId) {
+                    scope.formData.clientId = data.clientId;
+                    scope.clientName = data.clientName;
+                }
+                if (data.groupId) {
+                    scope.formData.groupId = data.groupId;
+                    scope.groupName = data.groupName;
+                }
+                scope.formData.productId = data.savingsProductId;
+                scope.products = data.productOptions;
+                if (data.fieldOfficerId != 0)scope.formData.fieldOfficerId = data.fieldOfficerId;
+                if (data.timeline) {
+                    var submittedOnDate = dateFilter(data.timeline.submittedOnDate, scope.df);
+                    scope.formData.submittedOnDate = new Date(submittedOnDate);
+                }
+                scope.formData.externalId = data.externalId;
+                scope.fieldOfficers = data.fieldOfficerOptions;
+                scope.formData.nominalAnnualInterestRate = data.nominalAnnualInterestRate;
+                scope.formData.minRequiredOpeningBalance = data.minRequiredOpeningBalance;
+                scope.formData.lockinPeriodFrequency = data.lockinPeriodFrequency;
+                /* FIX-ME: uncomment annualFeeAmount when datepicker avialable, because it depends on the date field 'annualFeeOnMonthDay'*/
+                scope.formData.withdrawalFeeAmount = data.withdrawalFeeAmount;
+                scope.formData.withdrawalFeeForTransfers = data.withdrawalFeeForTransfers;
+                scope.formData.allowOverdraft = data.allowOverdraft;
+                scope.formData.overdraftLimit = data.overdraftLimit;
+                scope.formData.nominalAnnualInterestRateOverdraft = data.nominalAnnualInterestRateOverdraft;
+                scope.formData.minOverdraftForInterestCalculation = data.minOverdraftForInterestCalculation;
+                scope.formData.enforceMinRequiredBalance = data.enforceMinRequiredBalance;
+                scope.formData.minRequiredBalance = data.minRequiredBalance;
+                scope.formData.withHoldTax = data.withHoldTax;
+
+                if (data.interestCompoundingPeriodType) scope.formData.interestCompoundingPeriodType = data.interestCompoundingPeriodType.id;
+                if (data.interestPostingPeriodType) scope.formData.interestPostingPeriodType = data.interestPostingPeriodType.id;
+                if (data.interestCalculationType) scope.formData.interestCalculationType = data.interestCalculationType.id;
+                if (data.interestCalculationDaysInYearType) scope.formData.interestCalculationDaysInYearType = data.interestCalculationDaysInYearType.id;
+                if (data.lockinPeriodFrequencyType) scope.formData.lockinPeriodFrequencyType = data.lockinPeriodFrequencyType.id;
+                if (data.withdrawalFeeType) scope.formData.withdrawalFeeType = data.withdrawalFeeType.id;
+
+            });
+
+            scope.changeProduct = function () {
+                var inparams = {productId: scope.formData.productId};
+                if (scope.formData.clientId) inparams.clientId = scope.formData.clientId;
+                if (scope.formData.groupId) inparams.groupId = scope.formData.groupId;
+                resourceFactory.savingsTemplateResource.get(inparams, function (data) {
+
+                    scope.data = data;
+
+                    scope.fieldOfficers = data.fieldOfficerOptions;
+                    scope.formData.nominalAnnualInterestRate = data.nominalAnnualInterestRate;
+                    scope.formData.minRequiredOpeningBalance = data.minRequiredOpeningBalance;
+                    scope.formData.lockinPeriodFrequency = data.lockinPeriodFrequency;
+                    /* FIX-ME: uncomment annualFeeAmount when datepicker avialable, because it depends on the date field 'annualFeeOnMonthDay'*/
+                    scope.formData.withdrawalFeeAmount = data.withdrawalFeeAmount;
+                    scope.formData.withdrawalFeeForTransfers = data.withdrawalFeeForTransfers;
+                    scope.formData.withHoldTax = data.withHoldTax;
+
+                    if (data.interestCompoundingPeriodType) scope.formData.interestCompoundingPeriodType = data.interestCompoundingPeriodType.id;
+                    if (data.interestPostingPeriodType) scope.formData.interestPostingPeriodType = data.interestPostingPeriodType.id;
+                    if (data.interestCalculationType) scope.formData.interestCalculationType = data.interestCalculationType.id;
+                    if (data.interestCalculationDaysInYearType) scope.formData.interestCalculationDaysInYearType = data.interestCalculationDaysInYearType.id;
+                    if (data.lockinPeriodFrequencyType) scope.formData.lockinPeriodFrequencyType = data.lockinPeriodFrequencyType.id;
+                    if (data.withdrawalFeeType) scope.formData.withdrawalFeeType = data.withdrawalFeeType.id;
+                });
+            }
+
+            scope.addCharge = function (chargeId) {
+                scope.errorchargeevent = false;
+                if (chargeId) {
+                    resourceFactory.chargeResource.get({chargeId: chargeId, template: 'true'}, function (data) {
+                        data.chargeId = data.id;
+                        if (data.chargeTimeType.value == "Annual Fee") {
+                            if (data.feeOnMonthDay) {
+                                data.feeOnMonthDay.push(2013);
+                                data.feeOnMonthDay = new Date(dateFilter(data.feeOnMonthDay, scope.df));
+                            }
+                        } else if (data.chargeTimeType.value == "Monthly Fee") {
+                            if (data.feeOnMonthDay) {
+                                data.feeOnMonthDay.push(2013);
+                                data.feeOnMonthDay = new Date(dateFilter(data.feeOnMonthDay, scope.df));
+                            }
+                        }
+
+                        delete data.id;
+                        scope.charges.push(data);
+                        scope.chargeId = undefined;
+                    });
+                } else {
+                    scope.errorchargeevent = true;
+                    scope.labelchargeerror = "selectcharge";
+                }
+            }
+
+            scope.deleteCharge = function (index) {
+                scope.charges.splice(index, 1);
+            }
+
+            scope.cancel = function () {
+                location.path('/viewgsimaccount/' + scope.groupId+'/'+scope.gsimAccountNumber);
+            }
+
+            scope.submit = function () {
+                if (this.formData.submittedOnDate)  this.formData.submittedOnDate = dateFilter(this.formData.submittedOnDate, scope.df);
+                this.formData.locale = scope.optlang.code;
+                this.formData.dateFormat = scope.df;
+                this.formData.monthDayFormat = "dd MMM";
+                scope.formData.charges = [];
+                if (scope.charges.length > 0) {
+                    for (var i in scope.charges) {
+                        if (scope.charges[i].chargeTimeType.value == 'Annual Fee') {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                feeOnMonthDay: dateFilter(scope.charges[i].feeOnMonthDay, 'dd MMMM')});
+                        } else if (scope.charges[i].chargeTimeType.value == 'Specified due date') {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                dueDate: dateFilter(scope.charges[i].dueDate, scope.df)});
+                        } else if (scope.charges[i].chargeTimeType.value == 'Monthly Fee') {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount,
+                                feeOnMonthDay: dateFilter(scope.charges[i].feeOnMonthDay, 'dd MMMM'), feeInterval: scope.charges[i].feeInterval});
+                        } else {
+                            this.formData.charges.push({ chargeId: scope.charges[i].chargeId, amount: scope.charges[i].amount});
+                        }
+                    }
+                }
+
+                resourceFactory.gsimResource.update({'parentAccountId':  scope.parentAccountId}, this.formData, function (data) {
+                    location.path('/viewsavingaccount/' + data.savingsId);
+                });
+            };
+        }
+    });
+    mifosX.ng.application.controller('EditGSIMAccountController', ['$scope', 'ResourceFactory', '$location', '$routeParams', 'dateFilter', mifosX.controllers.EditGSIMAccountController]).run(function ($log) {
+        $log.info("EditGSIMAccountController initialized");
+    });
+}(mifosX.controllers || {}));
+;(function (module) {
+    mifosX.controllers = _.extend(module, {
         EditSavingAccountController: function (scope, resourceFactory, location, routeParams, dateFilter) {
             scope.products = [];
             scope.fieldOfficers = [];
@@ -29566,6 +31674,398 @@
     });
     mifosX.ng.application.controller('EditSavingAccountController', ['$scope', 'ResourceFactory', '$location', '$routeParams', 'dateFilter', mifosX.controllers.EditSavingAccountController]).run(function ($log) {
         $log.info("EditSavingAccountController initialized");
+    });
+}(mifosX.controllers || {}));
+;(function (module) {
+    mifosX.controllers = _.extend(module, {
+        GSIMAccountActionsController: function (scope, resourceFactory, location, routeParams, dateFilter) {
+
+            scope.groupId=routeParams.groupId;
+            scope.gsimAccountNumber=routeParams.gsimAccountNumber;
+            scope.action = routeParams.action || "";
+            scope.accountId = routeParams.childId;
+            scope.parentAccountId = routeParams.parentId;
+            scope.formData = {};
+            scope.restrictDate = new Date();
+            // Transaction UI Related
+            scope.isTransaction = false;
+            scope.transactionAmountField = false;
+            scope.showPaymentDetails = false;
+            scope.paymentTypes = [];
+
+            switch (scope.action) {
+                case "approve":
+                    scope.title = 'label.heading.approvesavingaccount';
+                    scope.labelName = 'label.input.savingaccountapprovedOnDate';
+                    scope.modelName = 'approvedOnDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = true;
+                    scope.taskPermissionName = 'APPROVE_SAVINGSACCOUNT';
+                    break;
+                case "reject":
+                    scope.title = 'label.heading.rejectsavingaccount';
+                    scope.labelName = 'label.input.rejectedon';
+                    scope.modelName = 'rejectedOnDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = true;
+                    scope.taskPermissionName = 'REJECT_SAVINGSACCOUNT';
+                    break;
+                case "withdrawnByApplicant":
+                    scope.title = 'label.heading.withdrawsavingaccount';
+                    scope.labelName = 'label.input.withdrawnon';
+                    scope.modelName = 'withdrawnOnDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = true;
+                    scope.taskPermissionName = 'WITHDRAW_SAVINGSACCOUNT';
+                    break;
+                case "undoapproval":
+                    scope.title = 'label.heading.undoapprovesavingaccount';
+                    scope.showDateField = false;
+                    scope.showNoteField = true;
+                    scope.taskPermissionName = 'APPROVALUNDO_SAVINGSACCOUNT';
+                    break;
+                case "activate":
+                    scope.title = 'label.heading.activatesavingaccount';
+                    scope.labelName = 'label.input.activatedon';
+                    scope.modelName = 'activatedOnDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = false;
+                    scope.taskPermissionName = 'ACTIVATE_SAVINGSACCOUNT';
+                    break;
+                case "deposit":
+                    resourceFactory.savingsTrxnsTemplateResource.get({savingsId: scope.accountId}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                    });
+                    scope.title = 'label.heading.depositmoneytosavingaccount';
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.modelName = 'transactionDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = false;
+                    scope.isTransaction = true;
+                    scope.transactionAmountField = true;
+                    scope.showPaymentDetails = false;
+                    scope.taskPermissionName = 'DEPOSIT_SAVINGSACCOUNT';
+                    break;
+                case "gsimDeposit":
+                    scope.depositArray=[];
+                    scope.showDepositTable=true;
+                    scope.parentGSIM=[];
+                    resourceFactory.savingsTrxnsTemplateResource.get({savingsId: scope.accountId}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                    });
+                    resourceFactory.groupGSIMAccountResource.get({groupId: 2,parentGSIMId:scope.parentAccountId}, function (data) {
+                        scope.gsimAccounts = data[0].childGSIMAccounts;
+                        scope.parentGSIM=data[0];
+
+                        if(scope.depositArray.length!=0)
+                        {
+                            scope.depositArray=[];
+
+                        }
+                        for(i=0;i<scope.gsimAccounts.length;i++)
+                        {
+                            var temp={};
+                            temp.childAccountId=scope.gsimAccounts[i].id;
+                            temp.accountNo=scope.gsimAccounts[i].accountNo;
+                            temp.accountBalance=scope.gsimAccounts[i].accountBalance;
+                            scope.depositArray.push(temp);
+
+                        }
+                    });
+                    scope.title = 'label.heading.depositmoneytosavingaccount';
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.modelName = 'transactionDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = false;
+                    scope.isTransaction = true;
+                    scope.showvoucherNumberField = false;
+                    scope.showpaymentDescriptionField = false;
+                    scope.transactionAmountField = true;
+                    scope.showPaymentDetails = false;
+                    scope.taskPermissionName = 'DEPOSIT_SAVINGSACCOUNT';
+                    break;
+                case "postInterestAsOn":
+                    resourceFactory.savingsTrxnsTemplateResource.get({savingsId: scope.accountId}, function (data) {
+                        scope.accountnumber=data.accountNo;
+                    });
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.modelName = 'transactionDate';
+                    scope.showDateField = true;
+                    scope.showAccountNumber=true;
+                    break;
+                case "withdrawal":
+                    resourceFactory.savingsTrxnsTemplateResource.get({savingsId: scope.accountId}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                    });
+                    scope.title = 'label.heading.withdrawmoneyfromsavingaccount';
+                    scope.labelName = 'label.input.transactiondate';
+                    scope.modelName = 'transactionDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = false;
+                    scope.isTransaction = true;
+                    scope.transactionAmountField = true;
+                    scope.showPaymentDetails = false;
+                    scope.taskPermissionName = 'WITHDRAWAL_SAVINGSACCOUNT';
+                    break;
+                case "applyAnnualFees":
+                    resourceFactory.savingsResource.get({accountId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId},
+                        function (data) {
+                            scope.formData.amount = data.amount;
+                            if (data.dueDate) {
+                                var dueDate = dateFilter(data.dueDate, scope.df);
+                                scope.formData.dueDate = new Date(dueDate);
+                            }
+                        });
+                    scope.title = 'label.heading.savingaccountapplyannualFee';
+                    scope.labelName = 'label.input.annualfeetransactiondate';
+                    scope.modelName = 'dueDate';
+                    scope.showDateField = true;
+                    scope.showAnnualAmountField = true;
+                    scope.showAmountField = false;
+                    scope.showNoteField = false;
+                    scope.taskPermissionName = 'APPLYANNUALFEE_SAVINGSACCOUNT';
+                    break;
+                case "close":
+                    resourceFactory.savingsTrxnsTemplateResource.get({savingsId: scope.accountId}, function (data) {
+                        scope.paymentTypes = data.paymentTypeOptions;
+                    });
+                    resourceFactory.savingsResource.get({accountId: routeParams.id, fields:'summary'}, function (accountData) {
+                        scope.accountBalance = accountData.summary.accountBalance;
+                    });
+                    scope.title = 'label.heading.closesavingaccount';
+                    scope.labelName = 'label.input.closedon';
+                    scope.modelName = 'closedOnDate';
+                    scope.showDateField = true;
+                    scope.showNoteField = true;
+                    scope.withdrawBalance = true;
+                    scope.postInterestValidationOnClosure = true;
+                    scope.formData.postInterestValidationOnClosure = true;
+                    scope.taskPermissionName = 'CLOSE_SAVINGSACCOUNT';
+                    break;
+                case "modifytransaction":
+                    resourceFactory.savingsTrxnsResource.get({savingsId: scope.accountId, transactionId: routeParams.transactionId, template: 'true'},
+                        function (data) {
+                            scope.title = 'label.heading.editsavingaccounttransaction';
+                            scope.labelName = 'label.input.transactiondate';
+                            scope.modelName = 'transactionDate';
+                            scope.formData[scope.modelName] = new Date(data.date) || new Date();
+                            scope.paymentTypes = data.paymentTypeOptions;
+                            scope.formData.transactionAmount = data.amount;
+                            if (data.paymentDetailData) {
+                                if (data.paymentDetailData.paymentType) {
+                                    scope.formData.paymentTypeId = data.paymentDetailData.paymentType.id;
+                                }
+                                scope.formData.accountNumber = data.paymentDetailData.accountNumber;
+                                scope.formData.checkNumber = data.paymentDetailData.checkNumber;
+                                scope.formData.routingCode = data.paymentDetailData.routingCode;
+                                scope.formData.receiptNumber = data.paymentDetailData.receiptNumber;
+                                scope.formData.bankNumber = data.paymentDetailData.bankNumber;
+                            }
+                        });
+                    scope.showDateField = true;
+                    scope.showNoteField = false;
+                    scope.isTransaction = true;
+                    scope.transactionAmountField = true;
+                    scope.showPaymentDetails = false;
+                    scope.taskPermissionName = 'ADJUSTTRANSACTION_SAVINGSACCOUNT';
+                    break;
+                case "editsavingcharge":
+                    resourceFactory.savingsResource.get({accountId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId},
+                        function (data) {
+                            scope.formData.amount = data.amount;
+                            if (data.feeOnMonthDay) {
+                                scope.dateArray = [];
+                                scope.dateArray.push(2013)
+                                for (var i in data.feeOnMonthDay) {
+                                    scope.dateArray.push(data.feeOnMonthDay[i]);
+                                }
+                                var feeOnMonthDay = dateFilter(scope.dateArray, scope.df);
+                                scope.formData.feeOnMonthDayFullDate = new Date(feeOnMonthDay);
+                                scope.labelName = 'label.heading.savingaccounttransactionDate';
+                                scope.modelName = 'feeOnMonthDayFullDate';
+                                scope.showDateField = true;
+                                scope.showAnnualAmountField = true;
+                                scope.showAmountField = false;
+                            } else {
+                                scope.labelName = 'label.input.amount';
+                                scope.modelName = 'amount';
+                                scope.showDateField = false;
+                                scope.showAnnualAmountField = false;
+                                scope.showAmountField = true;
+                            }
+                        });
+                    scope.taskPermissionName = 'UPDATE_SAVINGSACCOUNTCHARGE';
+                    break;
+                case "deletesavingcharge":
+                    scope.showDelete = true;
+                    scope.taskPermissionName = 'DELETE_SAVINGSACCOUNTCHARGE';
+                    break;
+                case "paycharge":
+                    scope.formData.dueDate = new Date();
+                    resourceFactory.savingsResource.get({accountId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId,
+                        command: 'paycharge'}, function (data) {
+                        scope.formData.amount = data.amountOutstanding;
+                    });
+                    scope.labelName = 'label.input.amount';
+                    scope.showAmountField = true;
+                    scope.paymentDatefield = true;
+                    scope.modelName = 'dueDate';
+                    scope.taskPermissionName = 'PAY_SAVINGSACCOUNTCHARGE';
+                    break;
+                case "inactivate":
+                    scope.inactivateCharge = true;
+                    scope.taskPermissionName = 'INACTIVATE_SAVINGSACCOUNTCHARGE';
+                    break;
+                case "waive":
+                    scope.waiveCharge = true;
+                    scope.taskPermissionName = 'WAIVE_SAVINGSACCOUNTCHARGE';
+                    break;
+            }
+
+            scope.cancel = function () {
+                location.path('/viewgsimaccount/' + scope.groupId+'/'+scope.gsimAccountNumber);
+            };
+
+            scope.submit = function () {
+
+                scope.savingsArray=[];
+                scope.childAccounts=[];
+
+                var params = {command: scope.action};
+                if (scope.action != "undoapproval" && scope.action!="gsimDeposit") {
+                    this.formData.locale = scope.optlang.code;
+                    this.formData.dateFormat = scope.df;
+                }
+
+                if(scope.action=="gsimDeposit")
+                {
+                    for(var j=0;j<scope.gsimAccounts.length;j++)
+                    {
+                        if(scope.depositArray[j].transactionAmount)
+                        {
+                            var temp={};
+                            temp.locale = scope.optlang.code;
+                            temp.dateFormat = scope.df;
+                            temp.transactionDate=dateFilter(this.formData.transactionDate, scope.df);
+                            temp.transactionAmount=scope.depositArray[j].transactionAmount;
+                            temp.childAccountId=scope.depositArray[j].childAccountId;
+                            temp.voucherNumber=scope.depositArray[j].voucherNumber;
+                            temp.paymentDescription=scope.depositArray[j].paymentDescription;
+                            temp.paymentTypeId=scope.depositArray[j].paymentTypeId;
+                            // scope.childAccounts.push(scope.gsimAccounts[j].id);
+                            if(temp.transactionAmount!=0 )
+                            {
+                                scope.savingsArray.push(temp);
+                            }
+                        }
+                    }
+
+                    params.savingsId=scope.parentAccountId;
+                    this.formData.savingsArray=scope.savingsArray;
+                    this.formData.childAccounts=scope.childAccounts;
+
+                    resourceFactory.savingsTrxnsResource.save(params, this.formData, function (data) {
+                        location.path('/viewgsimaccount/' + scope.parentGSIM.groupId+'/'+scope.parentGSIM.accountNumber);
+
+                    });
+                }
+                else
+                if (scope.action == "deposit" || scope.action == "withdrawal" || scope.action == "modifytransaction" || scope.action=="postInterestAsOn") {
+                    if (scope.action == "withdrawal") {
+                        if (this.formData.transactionDate) {
+                            this.formData.transactionDate = dateFilter(this.formData.transactionDate, scope.df);
+                        }
+                    } else if (scope.action == "deposit") {
+                        if (this.formData.transactionDate) {
+                            this.formData.transactionDate = dateFilter(this.formData.transactionDate, scope.df);
+                        }
+                    }
+                    if (scope.action == "modifytransaction") {
+                        params.command = 'modify';
+                        if (this.formData.transactionDate) {
+                            this.formData.transactionDate = dateFilter(this.formData.transactionDate, scope.df);
+                        }
+                        params.transactionId = routeParams.transactionId;
+                    }
+                    if(scope.action=="postInterestAsOn"){
+                        if (this.formData.transactionDate) {
+                            this.formData.transactionDate = dateFilter(this.formData.transactionDate, scope.df);
+                        }
+                        this.formData.isPostInterestAsOn=true;
+                    }
+                    params.savingsId = scope.accountId;
+
+                    resourceFactory.savingsTrxnsResource.save(params, this.formData, function (data) {
+                        location.path('/viewsavingaccount/' + data.savingsId);
+                    });
+                } else if (scope.action == "editsavingcharge") {
+                    if (this.formData.feeOnMonthDayFullDate) {
+                        this.formData.feeOnMonthDay = dateFilter(this.formData.feeOnMonthDayFullDate, scope.df);
+                        this.formData.monthDayFormat = "dd MMM";
+                        this.formData.feeOnMonthDay = this.formData.feeOnMonthDay.substring(0, this.formData.feeOnMonthDay.length - 5);
+                        delete this.formData.feeOnMonthDayFullDate;
+                    }
+                    resourceFactory.savingsResource.update({accountId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId}, this.formData,
+                        function (data) {
+                            location.path('/viewsavingaccount/' + data.savingsId);
+                        });
+                } else if (scope.action == "deletesavingcharge") {
+                    resourceFactory.savingsResource.delete({accountId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId}, this.formData,
+                        function (data) {
+                            location.path('/viewsavingaccount/' + data.savingsId);
+                        });
+                } else if (scope.action == "paycharge" || scope.action == "waive" || scope.action == "inactivate") {
+                    params = {accountId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId, command: scope.action};
+                    if (this.formData.dueDate) {
+                        this.formData.dueDate = dateFilter(this.formData.dueDate, scope.df);
+                    } else if(this.formData.inactivationOnDate){
+                        this.formData.inactivationOnDate = dateFilter(this.formData.inactivationOnDate, scope.df);
+                    }
+                    resourceFactory.savingsResource.save(params, this.formData, function (data) {
+                        location.path('/viewgsimaccount/' + scope.parentGSIM.groupId+'/'+scope.parentGSIM.accountNumber);
+                    });
+                } else {
+                    params.parentAccountId = scope.parentAccountId;
+
+                    if (scope.action == "approve") {
+                        params.command='approve';
+                        if (this.formData.approvedOnDate) {
+                            this.formData.approvedOnDate = dateFilter(this.formData.approvedOnDate, scope.df);
+                        }
+                    } else if (scope.action == "withdrawnByApplicant") {
+                        if (this.formData.withdrawnOnDate) {
+                            this.formData.withdrawnOnDate = dateFilter(this.formData.withdrawnOnDate, scope.df);
+                        }
+                    } else if (scope.action == "reject") {
+                        params.command='reject';
+                        if (this.formData.rejectedOnDate) {
+                            this.formData.rejectedOnDate = dateFilter(this.formData.rejectedOnDate, scope.df);
+                        }
+                    } else if (scope.action == "activate") {
+                        if (this.formData.activatedOnDate) {
+                            this.formData.activatedOnDate = dateFilter(this.formData.activatedOnDate, scope.df);
+                        }
+                    } else if (scope.action == "applyAnnualFees" || scope.action == "paycharge" || scope.action == "waivecharge") {
+                        params = {accountId: routeParams.id, resourceType: 'charges', chargeId: routeParams.chargeId, command: 'paycharge'};
+                        if (this.formData.dueDate) {
+                            this.formData.dueDate = dateFilter(this.formData.dueDate, scope.df);
+                        }
+                    } else if (scope.action == "close") {
+
+                        if (this.formData.closedOnDate) {
+                            this.formData.closedOnDate = dateFilter(this.formData.closedOnDate, scope.df);
+                        }
+                    }
+
+                    resourceFactory.gsimCommandsResource.save(params, this.formData, function (data) {
+                        location.path('/viewgsimaccount/' + scope.groupId+'/'+scope.gsimAccountNumber);
+                    });
+                }
+            };
+        }
+    });
+    mifosX.ng.application.controller('GSIMAccountActionsController', ['$scope', 'ResourceFactory', '$location', '$routeParams', 'dateFilter', mifosX.controllers.GSIMAccountActionsController]).run(function ($log) {
+        $log.info("GSIMAccountActionsController initialized");
     });
 }(mifosX.controllers || {}));
 ;(function (module) {
@@ -30109,6 +32609,218 @@
     });
 }(mifosX.controllers || {}));
 
+;(function (module) {
+    mifosX.controllers = _.extend(module, {
+        ViewGSIMaccountController: function (scope, routeParams, route, location, resourceFactory, dateFilter, $uibModal) {
+
+            scope.groupId=routeParams.groupId;
+            scope.gsimAccountNumber=routeParams.gsimAccountNumber;
+            scope.savingaccountdetails = [];
+            var gsimChildAccountId=0;
+            scope.staffData = {};
+            scope.formData = {};
+            scope.date = {};
+            var parentGSIMId=0;
+
+
+            scope.convertDateArrayToObject = function(dateFieldName){
+                for(var i in scope.savingaccountdetails.transactions){
+                    scope.savingaccountdetails.transactions[i][dateFieldName] = new Date(scope.savingaccountdetails.transactions[i].date);
+                }
+            };
+
+            resourceFactory.groupGSIMAccountResource.get({groupId: scope.groupId,parentGSIMAccountNo:scope.gsimAccountNumber}, function (data) {
+                scope.groupAccounts = data[0];
+                gsimChildAccountId=data[0].childGSIMAccounts[0].id;
+                parentGSIMId=scope.groupAccounts.gsimId;
+
+                resourceFactory.savingsResource.get({accountId: gsimChildAccountId, associations: 'all'}, function (data) {
+                    scope.savingaccountdetails = data;
+                    scope.convertDateArrayToObject('date');
+                    if(scope.savingaccountdetails.groupId) {
+                        resourceFactory.groupResource.get({groupId: scope.savingaccountdetails.groupId}, function (data) {
+                            scope.groupLevel = data.groupLevel;
+                        });
+                    }
+                    scope.showonhold = true;
+                    if(angular.isUndefined(data.onHoldFunds)){
+                        scope.showonhold = false;
+                    }
+                    scope.staffData.staffId = data.staffId;
+                    scope.date.toDate = new Date();
+                    scope.date.fromDate = new Date(data.timeline.activatedOnDate);
+
+                    scope.status = data.status.value;
+                    if (scope.status == "Submitted and pending approval" || scope.status == "Active" || scope.status == "Approved") {
+                        scope.choice = true;
+                    }
+                    scope.chargeAction = data.status.value == "Submitted and pending approval" ? true : false;
+                    scope.chargePayAction = data.status.value == "Active" ? true : false;
+                    if (scope.savingaccountdetails.charges) {
+                        scope.charges = scope.savingaccountdetails.charges;
+                        scope.chargeTableShow = true;
+                    } else {
+                        scope.chargeTableShow = false;
+                    }
+                    if (data.status.value == "Submitted and pending approval") {
+                        scope.buttons = { singlebuttons: [
+                            {
+                                name: "button.modifyapplication",
+                                icon: "fa fa-pencil ",
+                                taskPermissionName:"UPDATE_SAVINGSACCOUNT"
+                            },
+                            {
+                                name: "button.approve",
+                                icon: "fa fa-check",
+                                taskPermissionName:"APPROVE_SAVINGSACCOUNT"
+                            },
+                            {
+                                name: "button.reject",
+                                icon: "fa fa-remove-circle",
+                                taskPermissionName:"REJECT_SAVINGSACCOUNT"
+                            }
+                        ]
+                        };
+                    }
+
+                    if (data.status.value == "Approved") {
+                        scope.buttons = { singlebuttons: [
+                            {
+                                name: "button.undoapproval",
+                                icon: "fa faf-undo",
+                                taskPermissionName:"APPROVALUNDO_SAVINGSACCOUNT"
+                            },
+                            {
+                                name: "button.activate",
+                                icon: "fa fa-check",
+                                taskPermissionName:"ACTIVATE_SAVINGSACCOUNT"
+                            }
+                        ]
+                        };
+                    }
+
+                    if (data.status.value == "Active") {
+                        scope.buttons = { singlebuttons: [
+
+                            {
+                                name: "button.deposit",
+                                icon: "fa fa-arrow-right",
+                                taskPermissionName:"DEPOSIT_SAVINGSACCOUNT"
+                            },
+                            {
+                                name: "button.close",
+                                icon :"fa fa-ban-circle",
+                                taskPermissionName:"CLOSE_SAVINGSACCOUNT"
+                            }
+                        ]
+                        };
+                    }
+                    if (data.annualFee) {
+                        var annualdueDate = [];
+                        annualdueDate = data.annualFee.feeOnMonthDay;
+                        annualdueDate.push(new Date().getFullYear());
+                        scope.annualdueDate = new Date(annualdueDate);
+                    };
+                });
+            });
+
+            scope.routeToSaving = function (id) {
+                location.path('/viewsavingaccount/' + id);
+            };
+            console.log("outer"+parentGSIMId);
+
+            scope.clickEvent = function (eventName, accountId) {
+                eventName = eventName || "";
+                switch (eventName) {
+                    case "modifyapplication":
+                        location.path('/editgsimaccount/' + parentGSIMId+'/'+gsimChildAccountId+'/'+scope.groupId+'/'+scope.gsimAccountNumber);
+                        break;
+                    case "approve":
+                        location.path('/gsimaccount/'+parentGSIMId +'/'+gsimChildAccountId+ '/approve/'+scope.groupId+'/'+scope.gsimAccountNumber);
+                        break;
+                    case "reject":
+                        location.path('/gsimaccount/'+parentGSIMId +'/'+gsimChildAccountId+ '/reject/'+scope.groupId+'/'+scope.gsimAccountNumber);
+                        break;
+                    case "withdrawnbyclient":
+                        location.path('/savingaccount/' + accountId + '/withdrawnByApplicant');
+                        break;
+                    case "delete":
+                        resourceFactory.savingsResource.delete({accountId: accountId}, {}, function (data) {
+                            var destination = '/viewgroup/' + data.groupId;
+                            if (data.clientId) destination = '/viewclient/' + data.clientId;
+                            location.path(destination);
+                        });
+                        break;
+                    case "undoapproval":
+                        location.path('/gsimaccount/'+parentGSIMId +'/'+gsimChildAccountId+ '/undoapproval/'+scope.groupId+'/'+scope.gsimAccountNumber);
+                        break;
+                    case "activate":
+                        location.path('/gsimaccount/'+parentGSIMId +'/'+gsimChildAccountId+ '/activate/'+scope.groupId+'/'+scope.gsimAccountNumber);
+                        break;
+                    case "deposit":
+                        location.path('/gsimaccount/'+parentGSIMId +'/'+gsimChildAccountId+  '/gsimDeposit/'+scope.groupId+'/'+scope.gsimAccountNumber);
+                        break;
+                    case "withdraw":
+                        location.path('/gsimaccount/'+parentGSIMId +'/'+gsimChildAccountId+  '/gsimWithdrawal/'+scope.groupId+'/'+scope.gsimAccountNumber);
+                        break;
+                    case "addcharge":
+                        location.path('/savingaccounts/' + accountId + '/charges');
+                        break;
+                    case "calculateInterest":
+                        resourceFactory.savingsResource.save({accountId: accountId, command: 'calculateInterest'}, {}, function (data) {
+                            route.reload();
+                        });
+                        break;
+                    case "postInterest":
+                        resourceFactory.savingsResource.save({accountId: accountId, command: 'postInterest'}, {}, function (data) {
+                            route.reload();
+                        });
+                        break;
+                    case "applyAnnualFees":
+                        location.path('/savingaccountcharge/' + accountId + '/applyAnnualFees/' + scope.annualChargeId);
+                        break;
+                    case "transferFunds":
+                        if (scope.savingaccountdetails.clientId) {
+                            location.path('/accounttransfers/fromsavings/' + accountId);
+                        }
+                        break;
+                    case "close":
+                        location.path('/gsimaccount/'+parentGSIMId +'/'+gsimChildAccountId+ '/close');
+                        break;
+                    case "assignSavingsOfficer":
+                        location.path('/assignsavingsofficer/' + accountId);
+                        break;
+                    case "unAssignSavingsOfficer":
+                        location.path('/unassignsavingsofficer/' + accountId);
+                        break;
+                    case "enableWithHoldTax":
+                        var changes = {
+                            withHoldTax:true
+                        };
+                        resourceFactory.savingsResource.update({accountId: accountId, command: 'updateWithHoldTax'}, changes, function (data) {
+                            route.reload();
+                        });
+                        break;
+                    case "disableWithHoldTax":
+                        var changes = {
+                            withHoldTax:false
+                        };
+                        resourceFactory.savingsResource.update({accountId: accountId, command: 'updateWithHoldTax'}, changes, function (data) {
+                            route.reload();
+                        });
+                        break;
+                    case "postInterestAsOn":
+                        location.path('/savingaccount/' + accountId + '/postInterestAsOn');
+                        break;
+                }
+            };
+
+        }
+    });
+    mifosX.ng.application.controller('ViewGSIMaccountController', ['$scope', '$routeParams', '$route', '$location', 'ResourceFactory', 'dateFilter', '$uibModal', mifosX.controllers.ViewGSIMaccountController]).run(function ($log) {
+        $log.info("ViewGSIMaccountController initialized");
+    });
+}(mifosX.controllers || {}));
 ;(function (module) {
     mifosX.controllers = _.extend(module, {
         ViewSavingChargeController: function (scope, resourceFactory, routeParams, location, $uibModal) {
