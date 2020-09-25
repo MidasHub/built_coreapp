@@ -4283,7 +4283,7 @@
                         }
                         if(scope.addressArray[i].townVillage)
                         {
-                            temp.townVlage=scope.addressArray[i].townVillage;
+                            temp.townVillage=scope.addressArray[i].townVillage;
                         }
                         if(scope.addressArray[i].city)
                         {
