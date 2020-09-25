@@ -4051,7 +4051,7 @@
                     scope.stateOptions=data.address[0].stateProvinceIdOptions;
 
                     resourceFactory.addressFieldConfiguration.get({entity:entityname},function(data){
-
+                        console.log(data); //JEan
 
 
                         for(var i=0;i<data.length;i++)
