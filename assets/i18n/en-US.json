@@ -64,6 +64,6 @@
 		}
 	},
 	"Home_Component":"Home_Component"{
-		"welcome":"Welcome, {{ username }}"
+		"welcome":"Hello, {{ username }}"
 	}
 }
