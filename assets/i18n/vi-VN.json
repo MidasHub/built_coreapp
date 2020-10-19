@@ -1,35 +1,69 @@
 {
-  "APP_NAME": "Midas - VN",
-  "----Footer component----": "----Login component----",
-  "Footer_component": {
-    "Version": "Phiên bản",
-    "Midas is up to date": "Midas đã được cập nhật"
-  },
-  "----End Footer component----": "----End Footer component----",
-  "----Login page----": "----Login page----",
-  "Login_Component": {
-    "APP_SLOGAN": "Phần mềm quản lý hiệu quả",
-    "About": "Về Chúng Tôi",
-    "Home": "Trang chủ",
-    "Logged in as": "Đã đang nhập là",
-    "Logout": "Đăng xuất",
-    "loginForm": {
-      "Login": "Đăng nhập",
-      "Password": "Mật khẩu",
-      "Password is required": "Mật khẩu là bắt buộc",     
-      "Username": "Tên người dùng",
-      "Username is required": "Tên người dùng là bắt buộc",
-      "Username or password incorrect.": "Tên người dùng hoặc Mật khẩu không dúng",
-           
-      "Remember me": "Ghi nhớ thông tin đăng nhập",
-      "Forgot Password": "Quên mật khẩu"
-    },
-    "resetPassword":{
-      "Confirm Password": "Xác nhận mật khẩu",
-      "Confirm Password is required": "Xác nhận mật khẩu là bắt buộc",
-      "Passwords do not match": "Các mật khẩu không khớp", 
-      "Reset Password": "Reset lại mật khẩu"
-    }
-  },
-  "----End Login page----": "---- End Login page----"
+	"----End Footer component----": "----End Footer component----",
+	"----End Login component----": "",
+	"----End Login page----": "---- End Login page----",
+	"----Footer component----": "----Login component----",
+	"----Login component----": "",
+	"----Login page----": "----Login page----",
+	"APP_NAME": "Midas - VN",
+	"Client_Component": {
+		"Account": "Mã CIF",
+		"ClientStepper": {
+			"AddressStep": {
+				"Add": "Thêm địa chỉ mới",
+				"Address": "Loại địa chỉ",
+				"AddressLine1": "Số nhà",
+				"AddressLine2": "Số Lô/Block",
+				"AddressLine3": "Chung cư",
+				"City": "Thành phố thuộc Tỉnh",
+				"Country": "Quốc Gia",
+				"Next": "Kế tiếp",
+				"PostalCode": "Mã bưu điện",
+				"Previous": "Quay lại",
+				"StateProvince": "Tỉnh/Thành phố thuộc TW",
+				"Street": "Tên đường",
+				"TownVilage": "Phường/Xã",
+				"isActive": "đã kích hoạt?"
+			}
+		},
+		"Create_Client": "Tạo khách hàng mới",
+		"ExternalID": "CMND/CCCD",
+		"Gender": "Giới tính",
+		"Import_Client": "Nhập list khách hàng",
+		"Mobile_Number": "Di động",
+		"Name": "Tên",
+		"OfficeName": "Chi nhánh",
+		"StaffName": "Nhân viên phụ trách",
+		"Status": "Trạng thái"
+	},
+	"Footer_component": {
+		"Midas is up to date": "Midas đã được cập nhật",
+		"Version": "Phiên bản"
+	},
+	"Login_Component": {
+		"APP_SLOGAN": "Phần mềm quản lý hiệu quả",
+		"About": "Về Chúng Tôi",
+		"Home": "Trang chủ",
+		"Logged in as": "Đã đăng nhập là",
+		"Logout": "Đăng xuất",
+		"loginForm": {
+			"Forgot Password": "Quên mật khẩu",
+			"Login": "Đăng nhập",
+			"Password": "Mật khẩu",
+			"Password is required": "Mật khẩu là bắt buộc",
+			"Remember me": "Ghi nhớ thông tin đăng nhập",
+			"Username": "Tên người dùng",
+			"Username is required": "Tên người dùng là bắt buộc",
+			"Username or password incorrect.": "Tên người dùng hoặc Mật khẩu không dúng"
+		},
+		"resetPassword": {
+			"Confirm Password": "Xác nhận mật khẩu",
+			"Confirm Password is required": "Xác nhận mật khẩu là bắt buộc",
+			"Passwords do not match": "Các mật khẩu không khớp",
+			"Reset Password": "Reset lại mật khẩu"
+		}
+	},
+	"Home_Component":"Home_Component"{
+		"welcome":"Xin chào, {{ username }}"
+	}
 }
