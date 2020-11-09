@@ -61,6 +61,11 @@
         "labelCorpConstitution": "Constitution",
         "labelCorpDate": "Incorporation Date",
         "labelTaxNo": "Tax Number",
+        "labelSelectExternalId": "External Id",
+        "labelSelectStaffCode": "Staff code",
+        "labelSelectAccountForPayment": "Account Payment ",
+        "labelSelectDocumentTypes": "Document Type",
+        "labelInputFileDocument": "Images",
         "labelAccountNo": "CIF No"
       },
       "RelativeStep": {
@@ -87,7 +92,97 @@
         "btnConfirm": "Confirm"
       },
       "buttonCancel": "Cancel",
-      "buttonSubmit": "Submit"
+      "buttonSubmit": "Submit",
+      "lblCustomerCreated": "Create customer successfully, ID: ",
+      "lblClose": "Close",
+      "FamilyMember": {
+        "Dialog": {
+          "labelInputFirstName": "First Name",
+          "labelInputFirstNameMsg": "First Name is <strong>required</strong>",
+          "labelMiddleName": "Middle Name",
+          "labelLastName": "Last Name",
+          "labelLastNameMsg": " Last Name is <strong>required</strong>",
+          "labelQualification": "Qualification",
+          "labelAge": "Age",
+          "labelAgeMsg": " Age is <strong>required</strong>",
+          "labelSelectRelationship": "Relationship",
+          "labelSelectRelationshipMsg": "Relationship is <strong>required</strong>",
+          "labelSelectGender": "Gender",
+          "labelSelectGenderMsg": "Gender is <strong>required</strong>",
+          "labelSelectProfession": "Profession",
+          "labelSelectMaritalStatus": "Marital Status",
+          "labelDateOfBirth": "Date Of Birth",
+          "labelDateOfBirthMsg": "Date of birth is <strong>required</strong>",
+          "buttonCancel": "Cancel",
+          "buttonConfirm": "Confirm",
+          "checkBoxDependent": "Is Dependent",
+          "labelMobileNumber": "Mobile Number"
+        },
+        "labelFirstName": "First Name",
+        "labelMiddleName": "Middle Name",
+        "labelLastName": "Last Name",
+        "labelQualification": "Qualification",
+        "labelRelationship": "Relationship",
+        "labelAge": "Age",
+        "labelDependent": "Dependent",
+        "labelMaritalStatus": "Marital Status",
+        "labelGender": "Gender",
+        "labelProfession": "Profession",
+        "labelDateOfBirth": "Date Of Birth ",
+        "labelDeleteFamilyMember": "Family member name",
+        "labelTitle": "Family Members",
+        "buttonAdd": "Add ",
+        "buttonPrevious": "Previous",
+        "buttonNext": "Next"
+      },
+      "Preview": {
+        "labelGeneral": "General",
+        "labelGeneralName": "Name",
+        "labelGeneralOffice": "Office ",
+        "labelLegalForm": "Legal Form",
+        "labelStaff": "Staff",
+        "labelDateOfBirth": "Date of Birth",
+        "labelIncorporationDate": "Incorporation date ",
+        "labelExternalId": "External Id",
+        "labelMobileNo": "Mobile No",
+        "labelClientType": "Client Type ",
+        "labelClassification": "Client Classification",
+        "labelSavingsProduct": "Savings Product",
+        "labelSubmittedOnDate": "Submitted On Date",
+        "labelActive": "Active",
+        "labelActivationDate": "Activation Date",
+        "labelGender": "Gender",
+        "labelIsStaff": "Is Staff",
+        "labelIncorporationValidityTillDate": "Incorporation Validity Till Date",
+        "labelIncorporationNumber": "Incorporation Number",
+        "labelMainBusinessLine": "Main Business Line",
+        "labelConstitution": "Constitution",
+        "labelRemark": "Remark",
+        "labelFamilyTitle": "Family Members",
+        "labelFamilyFirstName": "First Name",
+        "labelFamilyMiddleName": "Middle Name",
+        "labelFamilyLastName": "Last Name ",
+        "labelFamilyQualification": "Qualification",
+        "labelFamilyRelationship": "Relationship",
+        "labelFamilyAge": "Age",
+        "labelFamilyIsDependent": "Is Dependent",
+        "labelFamilyMaritalStatus": "Marital Status",
+        "labelFamilyGender": "Gender",
+        "labelFamilyProfession": "Profession",
+        "labelFamilyDateOfBirth": "Date Of Birth",
+        "labelAddressTitle": "Address",
+        "labelAddressStreet": "Street",
+        "labelAddressAddressLine": "Address Line",
+        "labelAddressTownVillage": "Town / Village",
+        "labelAddressCity": "City",
+        "labelAddressCountry": "Country",
+        "labelAddressPostalCode": "Postal Code",
+        "labelAddressActiveStatus": "Active Status",
+        "buttonPrevious": "Previous",
+        "buttonCancel": "Cancel",
+        "buttonSubmit": "Submit",
+        "labelAddressStateProvince": "State / Province "
+      }
     },
     "buttonImportClient": "Import Client",
     "buttonCreateClient": "Create Client",
@@ -101,6 +196,10 @@
     "tblColStatus": "Status",
     "tblColMobileNumber": "Mobile Number",
     "inputPlaceholderClosedCIF": "Search by client name",
+    "Breadcrumb": {
+      "labelClient": "Clients",
+      "labelCreateClient": "Create Client"
+    },
     "ViewClient": {
       "lblViewSignature": "View Signature",
       "lblClientName": "Client Name",
@@ -151,7 +250,17 @@
       "lblExtendInfo": "Additional informations",
       "tipUploadImage": "Upload Image",
       "tipCaptureImage": "Capture Image",
-      "tipDeleteImage": "Delete Image"
+      "tipDeleteImage": "Delete Image",
+      "TabIdentities": {
+        "selectDocumentType": "Document type",
+        "inputDocumentCardBank": "Document Card Bank",
+        "inputStatus": "Status",
+        "inputDescription": "Description",
+        "inputUniqueId": "Unique Id",
+        "selectBank": "Select bank",
+        "selectCardType": "Select card type",
+        "selectStatus": "Status"
+      }
     }
   },
   "Footer_Component": {
@@ -161,8 +270,16 @@
   "Home_Component": {
     "welcome": "Hello, ",
     "searchActivity": "Search Activity",
+    "Breadcrumb": {
+      "labelHome": "Home"
+    },
     "btnDashboard": "Dashboard",
-    "labelIncompleteRollterm": "Incomplete Refinance Card"
+    "labelIncompleteRollterm": "Incomplete Refinance Card",
+    "btnNewCustomer": "New Client",
+    "btnNewGroup": "New Group",
+    "lblOnDueCard": "On Due Date within next 15 days",
+    "lblCards": "Cards",
+    "btnViewOnDueCard": "View detail"
   },
   "Login_Component": {
     "APP_SLOGAN": "This is a Single Page Web that can help your Business grow",
@@ -260,10 +377,174 @@
       }
     }
   },
+  "Toolbar_Component": {
+    "labelInstitution": "Institution",
+    "lblAccounting": "Accounting",
+    "lblReport": "Report",
+    "lblAdmin": "Admin",
+    "lblSelfService": "Self Service",
+    "lblClient": "Client",
+    "lblGroup": "Group",
+    "lblCenter": "Center",
+    "lblAll": "All",
+    "lblLoan": "Loan",
+    "lblSaving": "Saving",
+    "lblFund": "Fund",
+    "lblXBRL": "XBRL",
+    "lblUser": "Users",
+    "lblOrg": "Organization",
+    "lblSys": "System",
+    "lblProduct": "Product",
+    "lblTemplate": "Template",
+    "lblUserManagement": "User Management",
+    "lblAppConfig": "App Configuration",
+    "lblTaskManagement": "Task Management",
+    "lblHelp": "Help",
+    "lblProfile": "Profile",
+    "lblSetting": "Setting",
+    "lblSignOut": "Sign Out",
+    "SearchTool_Component": {
+      "lblSearch": "Search",
+      "lblSource": "Source",
+      "lblSeachPlaceholder": "Please input params and press Enter to Search"
+    },
+    "lblShare": "Share"
+  },
   "Shared_Component": {
+    "DeleteDialog": {
+      "labelContext": "Are you sure you want to delete",
+      "buttonConfirm": "Confirm",
+      "buttonCancel": "Cancel",
+      "labelTitle": "Delete"
+    },
     "FormDialog": {
       "btnCancel": "Cancel",
       "btnAdd": "Add"
+    }
+  },
+  "Group_Component": {
+    "placeholderSearchByName": "Search by Name",
+    "labelShowClosedGroups": "Show Closed Groups",
+    "btnBulkImport": "Import Group",
+    "btnCreate": "Create Group",
+    "tableColName": "Name",
+    "tableColAccountNo": "Account #",
+    "tableColExternalId": "ExternalID",
+    "tableColStatus": "Status",
+    "tableColOfficeName": "Office Name",
+    "Create_Group_Component": {
+      "labelName": "name",
+      "labelGroupNameMsgRequired": "Group Name is <strong>required</strong>",
+      "labelGroupNameMsgPattern": "Group Name <strong>cannot</strong> begin with a special character or number",
+      "labelOffice": "Office",
+      "labelGroupOfficeMsgRequired": "Office is <strong>required</strong>",
+      "labelStaff": "Staff",
+      "labelType": "Group Type",
+      "CheckboxActive": "Active",
+      "tableColCartType": "Card Type",
+      "tableColFeeWithDraw": "Fee WithDraw",
+      "tableColFeeRollTerm": "Fee RollTerm",
+      "labelActivationDate": "Activation Date",
+      "labelGroupActivationDateMsgRequired": "Activation Date is <strong>required</strong>",
+      "labelExternal": "External Id",
+      "labelSubmittedOn": "Submitted On",
+      "labelGroupSubmittedOnMsgRequired": "Submission Date is <strong>required</strong>",
+      "labelAddClients": "Add Clients",
+      "tableColName": "Name",
+      "tableColId": "Id",
+      "tableColOfficeName": "Office Name",
+      "labelSelectedClients": "Selected Clients",
+      "btnCancel": "Cancel",
+      "btnSubmit": "Submit",
+      "msgCreatedGroup": "Group is created successfully"
+    }
+  },
+  "Saving_Account_Component": {
+    "ViewSavingAccount": {
+      "labelAccountName": "Account Name",
+      "labelCurrencyBalance": "Current Balance",
+      "labelAvailableBalance": "Available Balance",
+      "labelAccount": "Account",
+      "labelAccountSummary": "Account Summary",
+      "buttonTransferFunds": "Transfer Funds",
+      "buttonWithdraw": "Withdraw",
+      "buttonDeposit": "Deposit",
+      "buttonMore": "More",
+      "labelTotalDeposits": "Total Deposits",
+      "labelTotalWithdrawls": "Total Withdrawls",
+      "labelPerformanceHistory": "Performance History",
+      "labelInterestEarnedNotPosted": "Interest Earned Not Posted",
+      "labelNominalInterestRate": "Nominal Interest Rate",
+      "labelInterestCompoundingPeriod": "Interest Compounding Period",
+      "labelInterestPostingPeriod": "Interest Posting Period",
+      "labelInterestCalculatedUsing": "Interest Calculated Using",
+      "labelDaysinYear": "Days in Year",
+      "labelLastActiveTransactionDate": "Last Active Transaction Date",
+      "labelSavingsDetails": "Savings Details",
+      "labelActivatedOn": "Activated On",
+      "labelFieldOfficer": "Field Officer",
+      "labelExternalId": "External Id",
+      "labelCurrency": "Currency"
+    },
+    "Breadcrumb": {
+      "labelTransactions": "Transactions",
+      "labelSavingsAccountTransactions": "Savings Account Transactions"
+    },
+    "tabTransactions": {
+      "labelBalance": "Balance",
+      "labelTransactionDateFrom": "Transaction Date From",
+      "labelTransactionDateTo": "Transaction Date To",
+      "msgIncrease": "Increase",
+      "msgDecrease": "Decrease",
+      "lblTransactionType": "Transaction type",
+      "lblTransactionType2": "transaction type",
+      "lblNote": "Note",
+      "lblTransactionDate": "Transaction date",
+      "lblDeposit": "Deposit",
+      "lblWithdraw": "Withdraw",
+      "lblAmount": "Amount",
+      "lblProportional": "Proportional",
+      "btnSearch": "Search",
+      "btnExport": "Export"
+    },
+    "clientAdvanceCash": {
+      "titleClientAdvanceCash": "Advance Cash",
+      "labelClientCash": "Client",
+      "labelTypes": "Type",
+      "labelAmountAdvance": "Amount Advance",
+      "labelNoteAdvance": "Note"
+    },
+    "PartnerAdvanceCash": {
+      "partnerTitle": "Advance Cash",
+      "labelTypes": "Ty",
+      "labelAmountAdvance": "Amount",
+      "labelOfficeReciver": "Office",
+      "labelAccountReciver": "Account"
+    }
+  },
+  "Account_Transfer_Component": {
+    "MakeAccountTransfer": {
+      "lblApplicant": "Applicant",
+      "lblOffice": "Office",
+      "lblFromAccount": "From Account",
+      "lblFromAccountType": "From Account Type",
+      "lblCurrency": "Currency",
+      "lblTransferringTo": "Transferring To",
+      "msgOffice": "Office is <strong>required</strong>",
+      "lblClient": "Client",
+      "msgClient": "Client is <strong>required</strong>",
+      "lblAccountType": "Account type",
+      "msgAccountType": "Account Type is <strong>required</strong>",
+      "lblAccount": "Account",
+      "msgAccount": "Account is <strong>required</strong>",
+      "lblAmount": "Amount",
+      "msgAmount": "Amount is <strong>required</strong>",
+      "lblTransactionDate": "Transaction Date",
+      "msgTransactionDate": "Transactions Date is <strong>required</strong>",
+      "lblDescription": "Description",
+      "msgDescription": "Transfer Description is <strong>required</strong>",
+      "btnCancel": "Cancel",
+      "btnSubmit": "Submit"
     }
   }
 }
